@@ -20,7 +20,7 @@ int main(){
 #include <statusfunctions.h> // I believe an unuseful library, not finished. 
 #include <MatrixMath.h>
 
-#define N  (16)
+#define N  (4)
 
 mtx_type A[N][N];
 mtx_type B[N][N];
@@ -65,14 +65,20 @@ void setup()
 
  void loop()
  { 
-
-    delay(2000);
-	Matrix.Invert(*A, N);
-	Serial.println("\nInverted A:");
-	Matrix.Print(*A, N, N, "A");
-    //digitalWrite(13,1);
-    
-
-    while(1);
+    delay(500);
+    digitalWrite(13,1);
+    for(int i = 0; i<100; i++)
+    {
+	//Matrix.Invert(*A, N);
+    //Matrix.Multiply(*A, *B, N, N, N, *C);
+    Matrix.Add(*A, *B, N, N, *C);
+	//Serial.println("\n A:");
+	//Matrix.Print(*A, N, N, "A");
+    //Matrix.Print(*B, N, N, "B");
+    //Matrix.Print(*C, N, N, "C");
+    //delay(1000);
+    }
+    digitalWrite(13,0);
+    //while(1);
 }
 
