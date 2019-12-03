@@ -25,28 +25,29 @@
 #define sinBeta 0.7071
 
 
-mtx_type J[N][N] = {0,0,0, 0,0,0, 0,0,0};
-mtx_type dJ[N][N] = {0,0,0, 0,0,0, 0,0,0};
+mtx_type J[N][N] = {0,0,0, 0,0,0, 0,0,0}; // Jacobian
+mtx_type dJ[N][N] = {0,0,0, 0,0,0, 0,0,0}; // Derrivitive Jacobian
+mtx_type Jt[N][N] = {0,0,0, 0,0,0, 0,0,0}; // Jacobian transposed
 mtx_type H[N][1] = {0,0,0};
 mtx_type P[N][N] = {0,0,0, 0,0,0, 0,0,0};
-mtx_type Pt[N][N] = {0,0,0, 0,0,0, 0,0,0};
+mtx_type Pt[N][N] = {0,0,0, 0,0,0, 0,0,0}; // P transposed
 mtx_type Md[N][N] = {0,0,0, 0,0,0, 0,0,0};
 mtx_type Kv[N][N] = {Kvx,0,0, 0,Kvy,0, 0,0,Kvz};
 mtx_type Kp[N][N] = {Kpx,0,0, 0,Kpy,0, 0,0,Kpz};
-mtx_type q[N][1] = {-1,-1,-1};
-mtx_type dq[N][1] = {-1,-1,-1};
-mtx_type ex[N][1] = {0,0,0};
-mtx_type res[N][1] = {0,0,0};
+mtx_type q[N][1] = {-1,-1,-1}; // [theta zeta eta]'
+mtx_type dq[N][1] = {-1,-1,-1}; // Derrivative q
+mtx_type ex[N][1] = {0,0,0}; // Error x 
+mtx_type res[N][1] = {0,0,0}; // [tau lamba1 lambda2]'
 
 
-mtx_type KvJ[N][N];
-mtx_type MddJ[N][N];
-mtx_type MddJ_p_KvJ[N][N];
-mtx_type MddJ_p_KvJ_t_dq[N][1];
-mtx_type Kpex[N][1];
-mtx_type MddJ_p_KvJ_t_dq_m_Kpex[N][1];
-mtx_type H_m_MddJ_p_KvJ_t_dq_m_Kpex[N][1];
-mtx_type Pt_t_H[N][1];
+mtx_type KvJ[N][N]; // Kv * J
+mtx_type MddJ[N][N]; // Md * dJ
+mtx_type MddJ_p_KvJ[N][N]; // (Md * dJ) + (Kv * J)
+mtx_type MddJ_p_KvJ_t_dq[N][1];  // (Md * dJ) + (Kv * J)) * dq
+mtx_type Kpex[N][1]; // Kp * ex
+mtx_type MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // ((Md * dJ) + (Kv * J)) * dq) - (Kp * ex)
+mtx_type Jt_t_MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // Jt * (((Md * dJ) + (Kv * J)) * dq) - (Kp * ex))
+mtx_type H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // H - Jt * (((Md * dJ) + (Kv * J)) * dq) - (Kp * ex))
 
 
 
@@ -217,6 +218,7 @@ void JUpdate() // Have been verified
 	- l*sin((eta))*sin((theta))*sin((zeta))*sinBeta;
 }
 
+void JtUpdate(){}
 void PtUpdate(){}
 void qUpdate(){}
 void dqUpdate(){}
@@ -260,12 +262,15 @@ void loop()
 	Matrix.Multiply(*Kp, *ex, N, N, N, *Kpex);
 
 	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, N, *MddJ_p_KvJ_t_dq_m_Kpex);
+
+	JtUpdate();
+	Matrix.Multiply(*Jt, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 	
 	HUpdate();
-	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_MddJ_p_KvJ_t_dq_m_Kpex);
+	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 
 	PtUpdate();
-	Matrix.Multiply(*Pt, *H_m_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
+	Matrix.Multiply(*Pt, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
 
 	double Tau = res[0][0];
 
