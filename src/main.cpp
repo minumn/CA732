@@ -1,4 +1,4 @@
-#include <statusfunctions.h> // I believe an unuseful library, not finished. 
+#include <arduino.h> 
 #include <MatrixMath.h>
 
 #define OFF 0
@@ -43,7 +43,7 @@ mtx_type res[N][1] = {0,0,0}; // [tau lamba1 lambda2]'
 mtx_type KvJ[N][N]; // Kv * J
 mtx_type MddJ[N][N]; // Md * dJ
 mtx_type MddJ_p_KvJ[N][N]; // (Md * dJ) + (Kv * J)
-mtx_type MddJ_p_KvJ_t_dq[N][1];  // (Md * dJ) + (Kv * J)) * dq
+mtx_type MddJ_p_KvJ_t_dq[N][1];  // ((Md * dJ) + (Kv * J)) * dq
 mtx_type Kpex[N][1]; // Kp * ex
 mtx_type MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // ((Md * dJ) + (Kv * J)) * dq) - (Kp * ex)
 mtx_type Jt_t_MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // Jt * (((Md * dJ) + (Kv * J)) * dq) - (Kp * ex))
