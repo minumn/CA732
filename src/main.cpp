@@ -27,19 +27,30 @@
 
 mtx_type J[N][N] = {0,0,0, 0,0,0, 0,0,0};
 mtx_type dJ[N][N] = {0,0,0, 0,0,0, 0,0,0};
-mtx_type H[N][N] = {0,0,0, 0,0,0, 0,0,0};
+mtx_type H[N][1] = {0,0,0};
 mtx_type P[N][N] = {0,0,0, 0,0,0, 0,0,0};
+mtx_type Pt[N][N] = {0,0,0, 0,0,0, 0,0,0};
 mtx_type Md[N][N] = {0,0,0, 0,0,0, 0,0,0};
 mtx_type Kv[N][N] = {Kvx,0,0, 0,Kvy,0, 0,0,Kvz};
 mtx_type Kp[N][N] = {Kpx,0,0, 0,Kpy,0, 0,0,Kpz};
 mtx_type q[N][1] = {-1,-1,-1};
 mtx_type dq[N][1] = {-1,-1,-1};
+mtx_type ex[N][1] = {0,0,0};
+mtx_type res[N][1] = {0,0,0};
 
 
 mtx_type KvJ[N][N];
+mtx_type MddJ[N][N];
+mtx_type MddJ_p_KvJ[N][N];
+mtx_type MddJ_p_KvJ_t_dq[N][1];
+mtx_type Kpex[N][1];
+mtx_type MddJ_p_KvJ_t_dq_m_Kpex[N][1];
+mtx_type H_m_MddJ_p_KvJ_t_dq_m_Kpex[N][1];
+mtx_type Pt_t_H[N][1];
 
 
-void dJupdate() // Have been verified
+
+void dJUpdate() // Have been verified
 {
     float theta  = -q[0][0];
     float zeta   = -q[1][0];
@@ -152,7 +163,7 @@ void dJupdate() // Have been verified
 	- l*sin(eta)*cos(zeta)*sin(theta)*sinBeta*dzeta;
 }
 
-void updateJacobian() // Have been verified
+void JUpdate() // Have been verified
 {
 	double theta = -q[0][0];
 	double zeta = -q[1][0];
@@ -206,6 +217,11 @@ void updateJacobian() // Have been verified
 	- l*sin((eta))*sin((theta))*sin((zeta))*sinBeta;
 }
 
+void PtUpdate(){}
+void qUpdate(){}
+void dqUpdate(){}
+void HUpdate(){}
+void exUpdate(){}
 
 void LED(bool on){
 	digitalWrite(13,on);
@@ -221,15 +237,43 @@ void setup()
 
 void loop()
 { 
-    
-    Matrix.Multiply(*Kv, *J, N, N, N, *KvJ);
-	
-	dJupdate();
-	Matrix.Print(*dJ, N, N, "J");
-	//Matrix.Invert(*A, N);
-    //Matrix.Multiply(*A, *B, N, N, N, *C);
-    //Matrix.Add(*A, *B, N, N, *C);
-
+	// Wait for CHRONO timer
+	LED(OFF);
 	delay(2000);
+	LED(ON); // LED on during calculations.
+	// Restart CHRONO timer
+	
+	qUpdate();
+
+    JUpdate();
+    Matrix.Multiply(*Kv, *J, N, N, N, *KvJ);
+
+	dJUpdate();
+	Matrix.Multiply(*Md, *dJ, N, N, N, *MddJ);
+
+	Matrix.Add(*MddJ, *KvJ, N, N, *MddJ_p_KvJ);
+
+	dqUpdate();
+	Matrix.Multiply(*MddJ_p_KvJ, *dq, N, N, 1, *MddJ_p_KvJ_t_dq);
+
+	exUpdate();
+	Matrix.Multiply(*Kp, *ex, N, N, N, *Kpex);
+
+	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, N, *MddJ_p_KvJ_t_dq_m_Kpex);
+	
+	HUpdate();
+	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_MddJ_p_KvJ_t_dq_m_Kpex);
+
+	PtUpdate();
+	Matrix.Multiply(*Pt, *H_m_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
+
+	double Tau = res[0][0];
+
+	Serial.print("Torque: ");
+	Serial.print(Tau);
+	Serial.println();
+
+	// Check CHRONO timer to see time spent?
+
 }
 
