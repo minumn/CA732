@@ -24,7 +24,7 @@ void MatrixMath::Print(mtx_type* A, int m, int n, String label)
 	{
 		for (j = 0; j < n; j++)
 		{
-			Serial.print(A[n * i + j]);
+			Serial.print(A[n * i + j],6);
 			Serial.print("\t");
 		}
 		Serial.println();
