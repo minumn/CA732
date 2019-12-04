@@ -21,6 +21,11 @@
 #define l 0.55
 #define L 0.55
 #define b 0.3
+#define g 9.81
+#define mL 0.12
+#define mp 0.25
+#define mb 0.3
+
 // #define alpha 0.2618
 // #define beta 0.7854
 #define sinAlpha 0.2588
@@ -34,19 +39,26 @@ public:
     OneLimb();
     ~OneLimb();
     double getTorque();
+    void setZref(double Z);
 
 private:
+    double theta, zeta, eta, dtheta, dzeta, deta;
     mtx_type J[N][N]; // Jacobian
     mtx_type dJ[N][N]; // Derrivitive Jacobian
     mtx_type Jt[N][N]; // Jacobian transposed
     mtx_type H[N][1];
+    mtx_type C[N][1];
+    mtx_type G[N][1];
     mtx_type P[N][N];
-    mtx_type Pt[N][N]; // P transposed
+    mtx_type Phit[N][2];
+    mtx_type invP[N][N]; // P Inversed
     mtx_type Md[N][N];
     mtx_type Kv[N][N];
     mtx_type Kp[N][N];
     mtx_type q[N][1]; // [theta zeta eta]'
     mtx_type dq[N][1]; // Derrivative q
+    mtx_type x[N][1]; // x 
+    mtx_type xr[N][1]; // Ref x 
     mtx_type ex[N][1]; // Error x 
     mtx_type res[N][1]; // [tau lamba1 lambda2]'
 
@@ -62,11 +74,14 @@ private:
     void JUpdate();
     void dJUpdate();
     void JtUpdate();
-    void PtUpdate();
+    void invPUpdate();
     void qUpdate();
     void dqUpdate();
     void HUpdate();
     void exUpdate();
+    void GUpdate();
+    void CUpdate();
+    
 };
 
 #endif

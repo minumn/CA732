@@ -23,8 +23,9 @@ void loop()
 	LED(ON); // LED on during calculations.
 	// Restart CHRONO timer
 	
-	
+	oneLimb.setZref(-0.6);
 	int Tau = oneLimb.getTorque();
+	
 	Serial.print("Torque: ");
 	Serial.print(Tau);
 	Serial.println();
