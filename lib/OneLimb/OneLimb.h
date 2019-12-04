@@ -38,7 +38,7 @@ class OneLimb
 public:
     OneLimb();
     ~OneLimb();
-    double getTorque();
+    double getTorque(double AbsMotorPos);
     void setZref(double Z);
 
 private:
@@ -75,13 +75,12 @@ private:
     void dJUpdate();
     void JtUpdate();
     void invPUpdate();
-    void qUpdate();
+    void qUpdate(double AbsMotorPos);
     void dqUpdate();
     void HUpdate();
     void exUpdate();
     void GUpdate();
     void CUpdate();
-    
 };
 
 #endif

@@ -38,8 +38,8 @@ void OneLimb::setZref(double Z){
 	xr[2][0] = Z;
 }
 
-double OneLimb::getTorque(){
-    qUpdate();
+double OneLimb::getTorque(double AbsMotorPosition){
+    qUpdate(AbsMotorPosition);
 
     JUpdate();
     Matrix.Multiply(*Kv, *J, N, N, N, *KvJ);
@@ -379,7 +379,7 @@ void OneLimb::invPUpdate() // TODO: Verify
 		+ l*cosAlpha*cosAlpha*cosBeta*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta));
 }
 
-void OneLimb::qUpdate(){
+void OneLimb::qUpdate(double AbsMotorPosition){
 	// TODO: update q. Canbus data and FK?
 
 	theta = q[0][0];

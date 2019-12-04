@@ -12,8 +12,9 @@ void setup()
     Serial.begin(250000);
     pinMode(13,OUTPUT);
 	LED(OFF);
+	
+	oneLimb.setZref(-0.6);
 }
-
 
 void loop()
 { 
@@ -23,8 +24,9 @@ void loop()
 	LED(ON); // LED on during calculations.
 	// Restart CHRONO timer
 	
-	oneLimb.setZref(-0.6);
-	int Tau = oneLimb.getTorque();
+	double AbsMotorPosition = -1200;
+
+	int Tau = oneLimb.getTorque(AbsMotorPosition);
 	
 	Serial.print("Torque: ");
 	Serial.print(Tau);
