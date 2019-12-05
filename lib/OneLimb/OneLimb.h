@@ -46,11 +46,11 @@ private:
     mtx_type J[N][N]; // Jacobian
     mtx_type dJ[N][N]; // Derrivitive Jacobian
     mtx_type Jt[N][N]; // Jacobian transposed
-    mtx_type H[N][1];
-    mtx_type C[N][1];
-    mtx_type G[N][1];
-    mtx_type P[N][N];
-    mtx_type Phit[N][2];
+    mtx_type H[N][1]; // Coriolis and Gravity
+    mtx_type C[N][1]; // Coriolis Matrix
+    mtx_type G[N][1]; // Gravity Matrix
+    // mtx_type P[N][N];
+    // mtx_type Phit[N][2];
     mtx_type invP[N][N]; // P Inversed
     mtx_type Md[N][N];
     mtx_type Kv[N][N];

@@ -8,8 +8,8 @@ OneLimb::OneLimb() :
     H{0,0,0},
     C{0,0,0},
     G{0,0,0},
-    P{1,0,0, 0,0,0, 0,0,0},
-    Phit{0,0,0, 0,0,0},
+    // P{1,0,0, 0,0,0, 0,0,0},
+    // Phit{0,0,0, 0,0,0},
     invP{0,0,0, 0,0,0, 0,0,0},
     Md{0,0,0, 0,0,0, 0,0,0},
     Kv{Kvx,0,0, 0,Kvy,0, 0,0,Kvz},
@@ -380,7 +380,7 @@ void OneLimb::invPUpdate() // TODO: Verify
 }
 
 void OneLimb::qUpdate(double AbsMotorPosition){
-	// TODO: update q. Canbus data and FK?
+	// TODO: update q. Canbus data and FK? 
 
 	theta = q[0][0];
 	zeta = q[1][0];
