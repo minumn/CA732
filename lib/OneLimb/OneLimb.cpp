@@ -8,82 +8,95 @@ OneLimb::OneLimb() :
     H{0,0,0},
     C{0,0,0},
     G{0,0,0},
-    // P{1,0,0, 0,0,0, 0,0,0},
-    // Phit{0,0,0, 0,0,0},
     invP{0,0,0, 0,0,0, 0,0,0},
     Md{0,0,0, 0,0,0, 0,0,0},
     Kv{Kvx,0,0, 0,Kvy,0, 0,0,Kvz},
     Kp{Kpx,0,0, 0,Kpy,0, 0,0,Kpz},
-    q{-1,-1,-1},
-    dq{-1,-1,-1},
-    x{0,0,0},
-    xr{0,0,0},
+    q{-1.3931, 2.1697, 0.6982}, // Realistic start values.
+    qz1{0,0,0},
+    dq{0,0,0},
+    x{0,0,-0.5},
+    xr{0,0,-0.5},
     ex{0,0,0},
     res{0,0,0}
 {
-    
+	
 }
-OneLimb::~OneLimb(){
-
-}
+OneLimb::~OneLimb(){}
 
 void OneLimb::setZref(double Z){
 	// Only values between -0.4 and -1.0 is allowed.
-	if (Z > -0.4) {
-		Z = -0.4;
-	} else if (Z < -1.0) {
-		Z = 1.0;
+	if (Z > ZUPPERLIMIT) {
+		Z = ZUPPERLIMIT;
+	} else if (Z < ZLOWERLIMIT) {
+		Z = ZLOWERLIMIT;
 	}
 	
 	xr[2][0] = Z;
+
+	// Update new error
+	exUpdate();
+	// Calculate new Torque.
+	TorqueUpdate();
+}
+
+double OneLimb::motorPosToRad(double MotorPos){
+	return MotorPos*POSITIONTORADCONST;
+}
+
+void OneLimb::setMotorPositionOffset(double MotorPosOffset){
+	_MotorPosOffset = MotorPosOffset;
+}
+
+void OneLimb::newData(double AbsMotorPosition){
+	qUpdate(AbsMotorPosition);
+
+	// New jacobians as consequence of q, dq
+    JUpdate();
+	dJUpdate();
+	JtUpdate();
+	
+	HUpdate();
+
+	// New error x as consequence of new z
+	exUpdate();
+	
+	invPUpdate();
+	TorqueUpdate();
 }
 
 double OneLimb::getTorque(double AbsMotorPosition){
-    qUpdate(AbsMotorPosition);
-
-    JUpdate();
-    Matrix.Multiply(*Kv, *J, N, N, N, *KvJ);
-
-	dJUpdate();
-	Matrix.Multiply(*Md, *dJ, N, N, N, *MddJ);
-
-	Matrix.Add(*MddJ, *KvJ, N, N, *MddJ_p_KvJ);
-
-	dqUpdate();
-	Matrix.Multiply(*MddJ_p_KvJ, *dq, N, N, 1, *MddJ_p_KvJ_t_dq);
-
-	exUpdate();
-	Matrix.Multiply(*Kp, *ex, N, N, N, *Kpex);
-
-	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, N, *MddJ_p_KvJ_t_dq_m_Kpex);
-
-	JtUpdate();
-	Matrix.Multiply(*Jt, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
-	
-	HUpdate();
-	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
-
-	invPUpdate();
-	Matrix.Multiply(*invP, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
+	newData(AbsMotorPosition);
 
 	return res[0][0];
 }
 
-void OneLimb::JtUpdate(){
-	Matrix.Transpose(*J, N, N, *Jt);
+double OneLimb::getTorque(){
+	return res[0][0];
 }
 
-void OneLimb::invPUpdate() // TODO: Verify
-{
-	double theta = q[0][0];
-	double zeta  = q[1][0];
-	double eta   = q[2][0];
+void OneLimb::TorqueUpdate(){
+	
+	Matrix.Multiply(*Kv, *J, N, N, N, *KvJ);
 
-	theta = 1;
-	zeta = 1;
-	eta = 1;
+	Matrix.Multiply(*Md, *dJ, N, N, N, *MddJ);
 
+	Matrix.Add(*MddJ, *KvJ, N, N, *MddJ_p_KvJ);
 
+	Matrix.Multiply(*MddJ_p_KvJ, *dq, N, N, 1, *MddJ_p_KvJ_t_dq);
+
+	Matrix.Multiply(*Kp, *ex, N, N, N, *Kpex);
+
+	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, N, *MddJ_p_KvJ_t_dq_m_Kpex);
+
+	Matrix.Multiply(*Jt, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
+	
+	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
+
+	Matrix.Multiply(*invP, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
+}
+
+void OneLimb::invPUpdate() /* TODO: Verify */ {
 	invP[0][0] = 1;
 
 	invP[0][1] = (l*cos(eta)*cos(eta)*sinBeta*sin(theta)*sin(zeta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
@@ -379,30 +392,164 @@ void OneLimb::invPUpdate() // TODO: Verify
 		+ l*cosAlpha*cosAlpha*cosBeta*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta));
 }
 
+double OneLimb::CalculateZeta(double Theta)/* TODO: Verify */{
+	return -2*atan(
+				sqrt(2*l*l*l*l 
+					- 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					+ b*b*b*b 
+					- 7*l*l*b*b 
+					+ 2*l*l*l*l*cosBeta 
+					+ 2*b*b*b*b*cosBeta 
+					+ 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					- 8*l*l*b*b*cosBeta 
+					- 8*l*l*b*b*cos(theta) 
+					+ 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
+					- 8*l*l*b*b*cosBeta*cos(theta) 
+					- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b*b*cos(theta)*cos(theta) 
+						+ l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
+					- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*sqrt(b*b*cos(theta)*cos(theta) 
+					+ l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+						/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1))
+				/(4*(l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2)*tan(theta/2) 
+				- b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2)*tan(theta/2))) 
+				- (l*l*tanBetaHalf)/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)) 
+				+ (b*sqrt(2*l*l*tanBetaHalf*tanBetaHalf 
+					+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf + l*l 
+					+ 2*l*l*tan(theta/2)*tan(theta/2) + l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b*b 
+					- 2*b*b*tan(theta/2)*tan(theta/2) - b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+				/(4*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)) 
+				+ (l*l*tanBetaHalf*tan(theta/2)*tan(theta/2))/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)));
+
+}
+
+double OneLimb::CalculateEta(double Theta) /* TODO: Verify */ {
+	return -2*atan(
+				sqrt(2*l*l*l*l 
+					- 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b*b*b*b - 7*l*l*b*b + 2*l*l*l*l*cosBeta 
+					+ 2*b*b*b*b*cosBeta + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b*b*cosBeta 
+					- 8*l*l*b*b*cos(theta) + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta - 8*l*l*b*b*cosBeta*cos(theta) 
+					- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b 
+					- b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
+					- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
+						*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+						/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1))
+				/(2*(l*l*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- b*b*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2) 
+						+ b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
+				+ (cos(theta)
+					*sqrt(2*l*l*l*l - 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+						- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b*b*b*b - 7*l*l*b*b 
+						+ 2*l*l*l*l*cosBeta + 2*b*b*b*b*cosBeta + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+						+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b*b*cosBeta 
+						- 8*l*l*b*b*cos(theta) + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+						+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
+						- 8*l*l*b*b*cosBeta*cos(theta) 
+						- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+						+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf
+								*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+							/(cosBeta + 1) 
+						- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
+								*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+							/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1)))
+					/(2*(l*l*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- b*b*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2) 
+						+ b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
+						+ (l*sqrt(2*l*l*tanBetaHalf*tanBetaHalf + l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
+								+ l*l + 2*l*l*tan(theta/2)*tan(theta/2) 
+								+ l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
+								- b*b - 2*b*b*tan(theta/2)*tan(theta/2) 
+								- b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+							/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b))
+					- (l*b*tanBetaHalf)/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
+					+ (l*cos(theta)*
+							sqrt(2*l*l*tanBetaHalf*tanBetaHalf + l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
+								+ l*l + 2*l*l*tan(theta/2)*tan(theta/2) + l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b*b 
+								- 2*b*b*tan(theta/2)*tan(theta/2) - b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+						/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b)) 
+					+ (l*b*tanBetaHalf*tan(theta/2)*tan(theta/2))
+						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
+					- (l*b*tanBetaHalf*cos(theta))/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
+					+ (l*b*tanBetaHalf*tan(theta/2)*tan(theta/2)*cos(theta))
+						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b));
+
+}
+
+double OneLimb::CalculateZ(double Theta){
+	return -sqrt(b*b*cos(theta)*cos(theta) 
+	+ l*l - b*b 
+	- b*b*cosBeta*cosBeta*cos(theta)*cos(theta)) 
+	- b*sinBeta*cos(theta);
+}
+
 void OneLimb::qUpdate(double AbsMotorPosition){
-	// TODO: update q. Canbus data and FK? 
 
-	theta = q[0][0];
-	zeta = q[1][0];
-	eta = q[2][0];
-}
+	// Old q is now qz1 (q delayed)
+	std::copy(&q[0][0], &q[0][0]+N*N, &qz1[0][0]);
 
-void OneLimb::dqUpdate(){
-	// TODO: update dq. Look what Juan have done.
+	// Measured theta
+	theta = motorPosToRad(AbsMotorPosition);
+	
+	// Forward inverse kinematic.
+	zeta = CalculateZeta(theta);
+	eta = CalculateEta(theta);
+	z = CalculateZ(theta);
 
-	dtheta = dq[0][0];
-	dzeta = dq[1][0];
-	deta = dq[2][0];
-}
+	x[2][0] = z;
 
-void OneLimb::HUpdate(){
-	CUpdate();
-	GUpdate();
-	Matrix.Add(*C, *G, N, N, *H);
+	q[0][0] = theta;
+	q[1][0] = zeta;
+	q[2][0] = eta;
+
+	// Simple differentiation
+	dtheta = (q[0][0] - qz1[0][0])/SAMPLETIME;
+	dzeta = (q[1][0] - qz1[1][0])/SAMPLETIME;
+	deta = (q[2][0] - qz1[2][0])/SAMPLETIME;
+
+	dq[0][0] = dtheta;
+	dq[1][0] = dzeta;
+	dq[2][0] = deta;
 }
 
 void OneLimb::CUpdate(){
-
+	// TODO: Implement coriolis effect.
+	C[0][0] = 0;
 }
 
 void OneLimb::GUpdate(){
@@ -428,9 +575,64 @@ void OneLimb::GUpdate(){
         + L*g*mp*sinBeta*cos(theta)*sin(eta)*cos(zeta);
 }
 
-void OneLimb::exUpdate(){
+void OneLimb::HUpdate(){
+	CUpdate();
+	GUpdate();
+	Matrix.Add(*C, *G, N, N, *H);
+}
 
+void OneLimb::exUpdate(){
 	Matrix.Subtract(*x, *xr, N, 1, *ex);
+}
+
+void OneLimb::JUpdate() /* Have been verified */ {
+
+	J[0][0] = l*cos(eta)*sinAlpha*sin(theta)*sin(zeta) 
+	- b*cosAlpha*cosBeta*sin(theta) 
+	- b*sinAlpha*cos(theta)
+	- l*cos(eta)*sinAlpha*cos(theta)*cos(zeta) 
+	- l*cosAlpha*cosBeta*cos(eta)*cos(theta)*sin(zeta) 
+	- l*cosAlpha*cosBeta*cos(eta)*cos(zeta)*sin(theta);
+
+	J[1][0] = l*(cos((eta))*cos((zeta))*(cos((theta))*cosAlpha 
+	- sin((theta))*cosBeta*sinAlpha) 
+	- cos((eta))*sin((zeta))*(sin((theta))*cosAlpha 
+	+ cos((theta))*cosBeta*sinAlpha)) 
+	+ b*(cos((theta))*cosAlpha 
+	- sin((theta))*cosBeta*sinAlpha);
+
+	J[2][0] = sinBeta*(b*sin((theta)) 
+	+ l*cos((eta))*cos((theta))*sin((zeta)) 
+	+ l*cos((eta))*cos((zeta))*sin((theta)));
+
+	J[0][1] = l*cos((eta))*sin((zeta))*(sin((theta))*sinAlpha 
+	- cos((theta))*cosAlpha*cosBeta) 
+	- l*cos((eta))*cos((zeta))*(cos((theta))*sinAlpha 
+	+ sin((theta))*cosAlpha*cosBeta);
+
+	J[1][1] = l*cos((eta))*cos((zeta))*(cos((theta))*cosAlpha 
+	- sin((theta))*cosBeta*sinAlpha) 
+	- l*cos((eta))*sin((zeta))*(sin((theta))*cosAlpha 
+	+ cos((theta))*cosBeta*sinAlpha); 
+
+ 	J[2][1] = l*cos((eta))*sin((theta) 
+	 + (zeta))*sinBeta;
+
+	J[0][2] = l*sin((eta))*cos((zeta))*(sin((theta))*sinAlpha 
+	- cos((theta))*cosAlpha*cosBeta) 
+	+ l*sin((eta))*sin((zeta))*(cos((theta))*sinAlpha 
+	+ sin((theta))*cosAlpha*cosBeta) 
+	- l*cos((eta))*cosAlpha*sinBeta;
+	
+	J[1][2] = - l*sin((eta))*cos((zeta))*(sin((theta))*cosAlpha 
+	+ cos((theta))*cosBeta*sinAlpha) 
+	- l*sin((eta))*sin((zeta))*(cos((theta))*cosAlpha 
+	- sin((theta))*cosBeta*sinAlpha) 
+	- l*cos((eta))*sinAlpha*sinBeta;
+	
+	J[2][2] = l*cos((theta))*sin((eta))*cos((zeta))*sinBeta 
+	- l*cos((eta))*cosBeta 
+	- l*sin((eta))*sin((theta))*sin((zeta))*sinBeta;
 }
 
 void OneLimb::dJUpdate() /* Have been verified */ {
@@ -537,53 +739,6 @@ void OneLimb::dJUpdate() /* Have been verified */ {
 	- l*sin(eta)*cos(zeta)*sin(theta)*sinBeta*dzeta;
 }
 
-void OneLimb::JUpdate() /* Have been verified */ {
-
-	J[0][0] = l*cos(eta)*sinAlpha*sin(theta)*sin(zeta) 
-	- b*cosAlpha*cosBeta*sin(theta) 
-	- b*sinAlpha*cos(theta)
-	- l*cos(eta)*sinAlpha*cos(theta)*cos(zeta) 
-	- l*cosAlpha*cosBeta*cos(eta)*cos(theta)*sin(zeta) 
-	- l*cosAlpha*cosBeta*cos(eta)*cos(zeta)*sin(theta);
-
-	J[1][0] = l*(cos((eta))*cos((zeta))*(cos((theta))*cosAlpha 
-	- sin((theta))*cosBeta*sinAlpha) 
-	- cos((eta))*sin((zeta))*(sin((theta))*cosAlpha 
-	+ cos((theta))*cosBeta*sinAlpha)) 
-	+ b*(cos((theta))*cosAlpha 
-	- sin((theta))*cosBeta*sinAlpha);
-
-	J[2][0] = sinBeta*(b*sin((theta)) 
-	+ l*cos((eta))*cos((theta))*sin((zeta)) 
-	+ l*cos((eta))*cos((zeta))*sin((theta)));
-
-	J[0][1] = l*cos((eta))*sin((zeta))*(sin((theta))*sinAlpha 
-	- cos((theta))*cosAlpha*cosBeta) 
-	- l*cos((eta))*cos((zeta))*(cos((theta))*sinAlpha 
-	+ sin((theta))*cosAlpha*cosBeta);
-
-	J[1][1] = l*cos((eta))*cos((zeta))*(cos((theta))*cosAlpha 
-	- sin((theta))*cosBeta*sinAlpha) 
-	- l*cos((eta))*sin((zeta))*(sin((theta))*cosAlpha 
-	+ cos((theta))*cosBeta*sinAlpha); 
-
- 	J[2][1] = l*cos((eta))*sin((theta) 
-	 + (zeta))*sinBeta;
-
-	J[0][2] = l*sin((eta))*cos((zeta))*(sin((theta))*sinAlpha 
-	- cos((theta))*cosAlpha*cosBeta) 
-	+ l*sin((eta))*sin((zeta))*(cos((theta))*sinAlpha 
-	+ sin((theta))*cosAlpha*cosBeta) 
-	- l*cos((eta))*cosAlpha*sinBeta;
-	
-	J[1][2] = - l*sin((eta))*cos((zeta))*(sin((theta))*cosAlpha 
-	+ cos((theta))*cosBeta*sinAlpha) 
-	- l*sin((eta))*sin((zeta))*(cos((theta))*cosAlpha 
-	- sin((theta))*cosBeta*sinAlpha) 
-	- l*cos((eta))*sinAlpha*sinBeta;
-	
-	J[2][2] = l*cos((theta))*sin((eta))*cos((zeta))*sinBeta 
-	- l*cos((eta))*cosBeta 
-	- l*sin((eta))*sin((theta))*sin((zeta))*sinBeta;
+void OneLimb::JtUpdate(){
+	Matrix.Transpose(*J, N, N, *Jt);
 }
-

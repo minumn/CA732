@@ -13,18 +13,22 @@ void setup()
     pinMode(13,OUTPUT);
 	LED(OFF);
 	
-	oneLimb.setZref(-0.6);
+	oneLimb.setZref(-0.5);
 }
 
 void loop()
 { 
+	Serial.print("Squareroot of 9: ");
+	Serial.println(sqrt(9.0));
+	
+	double AbsMotorPosition = -1200;
+	
 	// Wait for CHRONO timer
 	LED(OFF);
 	delay(2000);
 	LED(ON); // LED on during calculations.
 	// Restart CHRONO timer
 	
-	double AbsMotorPosition = -1200;
 
 	int Tau = oneLimb.getTorque(AbsMotorPosition);
 	
