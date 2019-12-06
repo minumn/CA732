@@ -22,16 +22,21 @@ void loop()
 	Serial.println(sqrt(9.0));
 	
 	double AbsMotorPosition = -1200;
-	
+	int Tau = 0;
+
 	// Wait for CHRONO timer
 	LED(OFF);
 	delay(2000);
 	LED(ON); // LED on during calculations.
 	// Restart CHRONO timer
 	
+	for (size_t i = 0; i < 100; ++i)
+	{
+		Tau = oneLimb.getTorque(AbsMotorPosition);
+	}
 
-	int Tau = oneLimb.getTorque(AbsMotorPosition);
-	
+	LED(OFF);
+
 	Serial.print("Torque: ");
 	Serial.print(Tau);
 	Serial.println();
