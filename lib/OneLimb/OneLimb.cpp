@@ -41,7 +41,7 @@ void OneLimb::setZref(double Z){
 }
 
 double OneLimb::motorPosToRad(double MotorPos){
-	return MotorPos*POSITIONTORADCONST;
+	return MotorPos*0.0006-0.7114;
 }
 
 void OneLimb::setMotorPositionOffset(double MotorPosOffset){
@@ -111,19 +111,19 @@ void OneLimb::invPUpdate() /* TODO: Verify */ {
 		+ l*cosBeta*cos(eta)*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
 		+ l*cosBeta*cos(eta)*sin(eta)*sin(theta)*sin(theta)*sin(zeta)*sin(zeta)) 
-		- (b*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
+		- (b1*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
 		- l*cos(eta)*cos(eta)*sinBeta*sin(theta)*sin(zeta) 
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
 		+ l*cosBeta*cos(eta)*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
 		+ l*cosBeta*cos(eta)*sin(eta)*sin(theta)*sin(theta)*sin(zeta)*sin(zeta)) 
-		- (b*cos(eta)*sinBeta*cos(theta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
+		- (b1*cos(eta)*sinBeta*cos(theta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
 		- l*cos(eta)*cos(eta)*sinBeta*sin(theta)*sin(zeta) 
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
 		+ l*cosBeta*cos(eta)*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
 		+ l*cosBeta*cos(eta)*sin(eta)*sin(theta)*sin(theta)*sin(zeta)*sin(zeta)) 
-		- (b*cosBeta*sin(eta)*cos(zeta)*sin(theta)*sin(theta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
+		- (b1*cosBeta*sin(eta)*cos(zeta)*sin(theta)*sin(theta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
 		- l*cos(eta)*cos(eta)*sinBeta*sin(theta)*sin(zeta) 
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
 		+ l*cosBeta*cos(eta)*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
@@ -154,13 +154,13 @@ void OneLimb::invPUpdate() /* TODO: Verify */ {
 		+ l*cosBeta*cos(eta)*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
 		+ l*cosBeta*cos(eta)*sin(eta)*sin(theta)*sin(theta)*sin(zeta)*sin(zeta)),
 		
-	invP[0][2] = (b*cosBeta*cos(theta)*cos(theta)*sin(zeta))/(l*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
+	invP[0][2] = (b1*cosBeta*cos(theta)*cos(theta)*sin(zeta))/(l*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
 		- l*cos(eta)*sinBeta*sin(theta)*sin(zeta) 
 		+ l*cosBeta*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
 		+ l*cosBeta*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
 		+ l*cosBeta*sin(eta)*sin(theta)*sin(theta)*sin(zeta)*sin(zeta)
 		+ l*cos(eta)*sinBeta*cos(theta)*cos(zeta)) 
-		+ (b*cosBeta*sin(theta)*sin(theta)*sin(zeta))/(l*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
+		+ (b1*cosBeta*sin(theta)*sin(theta)*sin(zeta))/(l*cosBeta*cos(theta)*cos(theta)*sin(eta)*cos(zeta)*cos(zeta) 
 		- l*cos(eta)*sinBeta*sin(theta)*sin(zeta) 
 		+ l*cosBeta*sin(eta)*cos(zeta)*cos(zeta)*sin(theta)*sin(theta)
 		+ l*cosBeta*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta)
@@ -395,127 +395,127 @@ void OneLimb::invPUpdate() /* TODO: Verify */ {
 double OneLimb::CalculateZeta(double Theta)/* TODO: Verify */{
 	return -2*atan(
 				sqrt(2*l*l*l*l 
-					- 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					- 4*b1*b1*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
 					- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-					+ b*b*b*b 
-					- 7*l*l*b*b 
+					+ b1*b1*b1*b1 
+					- 7*l*l*b1*b1 
 					+ 2*l*l*l*l*cosBeta 
-					+ 2*b*b*b*b*cosBeta 
-					+ 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
-					- 8*l*l*b*b*cosBeta 
-					- 8*l*l*b*b*cos(theta) 
-					+ 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
-					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
-					- 8*l*l*b*b*cosBeta*cos(theta) 
-					- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
-					+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b*b*cos(theta)*cos(theta) 
-						+ l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
-					- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*sqrt(b*b*cos(theta)*cos(theta) 
-					+ l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+					+ 2*b1*b1*b1*b1*cosBeta 
+					+ 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					- 8*l*l*b1*b1*cosBeta 
+					- 8*l*l*b1*b1*cos(theta) 
+					+ 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+					+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
+					- 8*l*l*b1*b1*cosBeta*cos(theta) 
+					- 32*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					+ (8*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b1*b1*cos(theta)*cos(theta) 
+						+ l*l - b1*b1 - b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
+					- (32*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*sqrt(b1*b1*cos(theta)*cos(theta) 
+					+ l*l - b1*b1 - b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))
 						/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1))
 				/(4*(l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2)*tan(theta/2) 
-				- b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2)*tan(theta/2))) 
-				- (l*l*tanBetaHalf)/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)) 
-				+ (b*sqrt(2*l*l*tanBetaHalf*tanBetaHalf 
+				- b1*b1*cosBetaHalf*cosBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2)*tan(theta/2))) 
+				- (l*l*tanBetaHalf)/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b1*b1)) 
+				+ (b1*sqrt(2*l*l*tanBetaHalf*tanBetaHalf 
 					+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf + l*l 
 					+ 2*l*l*tan(theta/2)*tan(theta/2) + l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-					+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b*b 
-					- 2*b*b*tan(theta/2)*tan(theta/2) - b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					+ 2*b1*b1*tanBetaHalf*tanBetaHalf - b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b1*b1 
+					- 2*b1*b1*tan(theta/2)*tan(theta/2) - b1*b1*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 					+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 					+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 					+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 					+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-					- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-					+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-					- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-					- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
-				/(4*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)) 
-				+ (l*l*tanBetaHalf*tan(theta/2)*tan(theta/2))/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b*b)));
+					- 12*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					+ 2*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+					- 2*b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+					- b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+				/(4*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b1*b1)) 
+				+ (l*l*tanBetaHalf*tan(theta/2)*tan(theta/2))/(2*(tanBetaHalf*tan(theta/2)*l*l - tanBetaHalf*tan(theta/2)*b1*b1)));
 
 }
 
 double OneLimb::CalculateEta(double Theta) /* TODO: Verify */ {
 	return -2*atan(
 				sqrt(2*l*l*l*l 
-					- 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-					- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b*b*b*b - 7*l*l*b*b + 2*l*l*l*l*cosBeta 
-					+ 2*b*b*b*b*cosBeta + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b*b*cosBeta 
-					- 8*l*l*b*b*cos(theta) + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
-					+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta - 8*l*l*b*b*cosBeta*cos(theta) 
-					- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
-					+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b 
-					- b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
-					- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
-						*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+					- 4*b1*b1*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b1*b1*b1*b1 - 7*l*l*b1*b1 + 2*l*l*l*l*cosBeta 
+					+ 2*b1*b1*b1*b1*cosBeta + 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+					+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b1*b1*cosBeta 
+					- 8*l*l*b1*b1*cos(theta) + 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+					+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta - 8*l*l*b1*b1*cosBeta*cos(theta) 
+					- 32*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+					+ (8*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*sqrt(b1*b1*cos(theta)*cos(theta) + l*l - b1*b1 
+					- b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))/(cosBeta + 1) 
+					- (32*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
+						*sqrt(b1*b1*cos(theta)*cos(theta) + l*l - b1*b1 - b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))
 						/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1))
 				/(2*(l*l*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
-						- b*b*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- b1*b1*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
 						- l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2) 
-						+ b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
+						+ b1*b1*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
 				+ (cos(theta)
-					*sqrt(2*l*l*l*l - 4*b*b*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-						- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b*b*b*b - 7*l*l*b*b 
-						+ 2*l*l*l*l*cosBeta + 2*b*b*b*b*cosBeta + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
-						+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b*b*cosBeta 
-						- 8*l*l*b*b*cos(theta) + 16*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
-						+ 16*l*l*b*b*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
-						- 8*l*l*b*b*cosBeta*cos(theta) 
-						- 32*l*l*b*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
-						+ (8*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf
-								*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+					*sqrt(2*l*l*l*l - 4*b1*b1*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+						- 4*l*l*l*l*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf + b1*b1*b1*b1 - 7*l*l*b1*b1 
+						+ 2*l*l*l*l*cosBeta + 2*b1*b1*b1*b1*cosBeta + 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
+						+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) - 8*l*l*b1*b1*cosBeta 
+						- 8*l*l*b1*b1*cos(theta) + 16*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta) 
+						+ 16*l*l*b1*b1*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)*cosBeta 
+						- 8*l*l*b1*b1*cosBeta*cos(theta) 
+						- 32*l*l*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2) 
+						+ (8*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf
+								*sqrt(b1*b1*cos(theta)*cos(theta) + l*l - b1*b1 - b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))
 							/(cosBeta + 1) 
-						- (32*l*l*b*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
-								*sqrt(b*b*cos(theta)*cos(theta) + l*l - b*b - b*b*cosBeta*cosBeta*cos(theta)*cos(theta)))
+						- (32*l*l*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*sinBetaHalf*cos(theta/2)*cos(theta/2)*cos(theta/2)*cos(theta/2)
+								*sqrt(b1*b1*cos(theta)*cos(theta) + l*l - b1*b1 - b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)))
 							/(cosBeta + cos(theta) + cosBeta*cos(theta) + 1)))
 					/(2*(l*l*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
-						- b*b*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
+						- b1*b1*cosBetaHalf*cosBetaHalf*cos(theta/2)*cos(theta/2) 
 						- l*l*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2) 
-						+ b*b*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
+						+ b1*b1*cosBetaHalf*cosBetaHalf*tanBetaHalf*tanBetaHalf*cos(theta/2)*cos(theta/2))) 
 						+ (l*sqrt(2*l*l*tanBetaHalf*tanBetaHalf + l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
 								+ l*l + 2*l*l*tan(theta/2)*tan(theta/2) 
 								+ l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
-								- b*b - 2*b*b*tan(theta/2)*tan(theta/2) 
-								- b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*b1*b1*tanBetaHalf*tanBetaHalf - b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
+								- b1*b1 - 2*b1*b1*tan(theta/2)*tan(theta/2) 
+								- b1*b1*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 								+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 								+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 								+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 								+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-								+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-								- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
-							/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b))
-					- (l*b*tanBetaHalf)/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
+								- 12*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 2*b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								- b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+							/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1))
+					- (l*b1*tanBetaHalf)/(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1) 
 					+ (l*cos(theta)*
 							sqrt(2*l*l*tanBetaHalf*tanBetaHalf + l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf 
 								+ l*l + 2*l*l*tan(theta/2)*tan(theta/2) + l*l*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								+ 2*b*b*tanBetaHalf*tanBetaHalf - b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b*b 
-								- 2*b*b*tan(theta/2)*tan(theta/2) - b*b*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								+ 2*b1*b1*tanBetaHalf*tanBetaHalf - b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf - b1*b1 
+								- 2*b1*b1*tan(theta/2)*tan(theta/2) - b1*b1*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 								+ 4*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 								+ 2*l*l*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
 								+ 2*l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
 								+ l*l*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								- 12*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-								+ 2*b*b*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
-								- 2*b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
-								- b*b*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
-						/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b)) 
-					+ (l*b*tanBetaHalf*tan(theta/2)*tan(theta/2))
-						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
-					- (l*b*tanBetaHalf*cos(theta))/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b) 
-					+ (l*b*tanBetaHalf*tan(theta/2)*tan(theta/2)*cos(theta))
-						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b*b*tanBetaHalf*tanBetaHalf + b*b));
+								- 12*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								+ 2*b1*b1*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2) 
+								- 2*b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2) 
+								- b1*b1*tanBetaHalf*tanBetaHalf*tanBetaHalf*tanBetaHalf*tan(theta/2)*tan(theta/2)*tan(theta/2)*tan(theta/2)))
+						/(2*(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1)) 
+					+ (l*b1*tanBetaHalf*tan(theta/2)*tan(theta/2))
+						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1) 
+					- (l*b1*tanBetaHalf*cos(theta))/(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1) 
+					+ (l*b1*tanBetaHalf*tan(theta/2)*tan(theta/2)*cos(theta))
+						/(l*l*tanBetaHalf*tanBetaHalf - l*l - b1*b1*tanBetaHalf*tanBetaHalf + b1*b1));
 
 }
 
 double OneLimb::CalculateZ(double Theta){
-	return -sqrt(b*b*cos(theta)*cos(theta) 
-	+ l*l - b*b 
-	- b*b*cosBeta*cosBeta*cos(theta)*cos(theta)) 
-	- b*sinBeta*cos(theta);
+	return -sqrt(b1*b1*cos(theta)*cos(theta) 
+	+ l*l - b1*b1 
+	- b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)) 
+	- b1*sinBeta*cos(theta);
 }
 
 void OneLimb::qUpdate(double AbsMotorPosition){
@@ -554,9 +554,9 @@ void OneLimb::CUpdate(){
 
 void OneLimb::GUpdate(){
 	
-	G[0][0] = b*g*mL*sinBeta*sin(theta) 
-        + (b*g*mb*sinBeta*sin(theta))/2 
-        + b*g*mp*sinBeta*sin(theta) 
+	G[0][0] = b1*g*mL*sinBeta*sin(theta) 
+        + (b1*g*mb*sinBeta*sin(theta))/2 
+        + b1*g*mp*sinBeta*sin(theta) 
         + (L*g*mL*cos(eta)*sinBeta*cos(theta)*sin(zeta))/2 
         + (L*g*mL*cos(eta)*sinBeta*cos(zeta)*sin(theta))/2 
         + L*g*mp*cos(eta)*sinBeta*cos(theta)*sin(zeta) 
@@ -588,8 +588,8 @@ void OneLimb::exUpdate(){
 void OneLimb::JUpdate() /* Have been verified */ {
 
 	J[0][0] = l*cos(eta)*sinAlpha*sin(theta)*sin(zeta) 
-	- b*cosAlpha*cosBeta*sin(theta) 
-	- b*sinAlpha*cos(theta)
+	- b1*cosAlpha*cosBeta*sin(theta) 
+	- b1*sinAlpha*cos(theta)
 	- l*cos(eta)*sinAlpha*cos(theta)*cos(zeta) 
 	- l*cosAlpha*cosBeta*cos(eta)*cos(theta)*sin(zeta) 
 	- l*cosAlpha*cosBeta*cos(eta)*cos(zeta)*sin(theta);
@@ -598,10 +598,10 @@ void OneLimb::JUpdate() /* Have been verified */ {
 	- sin((theta))*cosBeta*sinAlpha) 
 	- cos((eta))*sin((zeta))*(sin((theta))*cosAlpha 
 	+ cos((theta))*cosBeta*sinAlpha)) 
-	+ b*(cos((theta))*cosAlpha 
+	+ b1*(cos((theta))*cosAlpha 
 	- sin((theta))*cosBeta*sinAlpha);
 
-	J[2][0] = sinBeta*(b*sin((theta)) 
+	J[2][0] = sinBeta*(b1*sin((theta)) 
 	+ l*cos((eta))*cos((theta))*sin((zeta)) 
 	+ l*cos((eta))*cos((zeta))*sin((theta)));
 
@@ -636,7 +636,7 @@ void OneLimb::JUpdate() /* Have been verified */ {
 }
 
 void OneLimb::dJUpdate() /* Have been verified */ {
-    dJ[0][0] = b*(sin(theta)*sinAlpha*dtheta 
+    dJ[0][0] = b1*(sin(theta)*sinAlpha*dtheta 
 	- cos(theta)*cosAlpha*cosBeta*dtheta) 
 	+ l*(cos(eta)*cos(zeta)*(sin(theta)*sinAlpha*dtheta 
 	- cos(theta)*cosAlpha*cosBeta*dtheta) 
@@ -678,7 +678,7 @@ void OneLimb::dJUpdate() /* Have been verified */ {
 	- cos(theta)*cosAlpha*cosBeta)*dzeta 
 	+ l*sin(eta)*cosAlpha*sinBeta*deta;
 
-    dJ[1][0] = -b*(sin(theta)*cosAlpha*dtheta 
+    dJ[1][0] = -b1*(sin(theta)*cosAlpha*dtheta 
 	+ cos(theta)*cosBeta*sinAlpha*dtheta) 
 	- l*(cos(eta)*cos(zeta)*(sin(theta)*cosAlpha*dtheta 
 	+ cos(theta)*cosBeta*sinAlpha*dtheta) 
@@ -723,7 +723,7 @@ void OneLimb::dJUpdate() /* Have been verified */ {
     dJ[2][0] = -sinBeta*(l*cos(theta)*sin(eta)*sin(zeta)*deta 
 	- l*cos(eta)*cos(theta)*cos(zeta)*dtheta 
 	- l*cos(eta)*cos(theta)*cos(zeta)*dzeta 
-	- b*cos(theta)*dtheta + l*sin(eta)*cos(zeta)*sin(theta)*deta 
+	- b1*cos(theta)*dtheta + l*sin(eta)*cos(zeta)*sin(theta)*deta 
 	+ l*cos(eta)*sin(theta)*sin(zeta)*dtheta + l*cos(eta)*sin(theta)*sin(zeta)*dzeta);
 
     dJ[2][1] = l*cos(eta)*cos(theta 
@@ -741,4 +741,14 @@ void OneLimb::dJUpdate() /* Have been verified */ {
 
 void OneLimb::JtUpdate(){
 	Matrix.Transpose(*J, N, N, *Jt);
+}
+
+int sign(float x) {
+  if (x > 0) return 1;
+  if (x < 0) return -1;
+  return 0;
+}
+
+void LED(bool on){
+	digitalWrite(13,on);
 }

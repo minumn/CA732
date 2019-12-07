@@ -21,7 +21,7 @@
 
 #define l 0.55 // meter
 #define L 0.55 // meter
-#define b 0.3 // meter
+#define b1 0.3 // meter
 #define g 9.81
 #define mL 0.12 // kg
 #define mp 0.25 // kg
@@ -30,7 +30,7 @@
 #define ZUPPERLIMIT -0.4 // meter
 #define ZLOWERLIMIT -1.0 // meter
 
-#define POSITIONTORADCONST 0.001
+#define CONTROLDELAY 20000 // us -> 20 ms
 #define SAMPLETIME 0.002
 
 // #define alpha 0.2618
@@ -99,5 +99,9 @@ private:
     void CUpdate();
     void TorqueUpdate();
 };
+
+
+int sign(float x);
+void LED(bool on);
 
 #endif
