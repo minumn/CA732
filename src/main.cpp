@@ -33,6 +33,7 @@ void loop()
 	for (size_t i = 0; i < 100; ++i)
 	{
 		Tau = oneLimb.getTorque(AbsMotorPosition);
+		AbsMotorPosition += 100;
 	}
 
 	LED(OFF);
