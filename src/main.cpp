@@ -70,6 +70,8 @@ uint16_t T_PDO2_id = 0x280; // ID
 uint16_t T_PDO3_id = 0x380;
 uint16_t T_PDO4_id = 0x480;
 
+double torqueRef = 0;
+
 uint16_t R_PDO1_id = 0x200;
 uint16_t R_PDO2_id = 0x300;
 uint16_t R_PDO4_id = 0x500;
@@ -1140,44 +1142,10 @@ void setup() {
   
   SMCCAN.writeToRegisterS(sync_cobid);
   
-  // OnSetup();
-  // while(true) {
-  //   Serial.print("here i came");
-  //   delay(100);
-  // }
 }
 ///////*************** MAIN PROGRAM ******//////////////////
 void loop() {
-  
-  // if (sampling_time.hasPassed(1000)) { // time in microseconds
-  //   sampling_time.restart();
-  //   ReadVariables();
-  //   target_torque[0] = 200; // this value goes from -1000 to 1000 , than translates to -0.31 Nm to 0.31 Newton meter
-  //   float kp = 10.0F;
-  //   float refq = 1.0; 
-  //   float torque = kp * (refq - q[0]);
-  //   if ( abs(torque)> 999) {
-  //     torque = 1000 * sign(torque);
-  //   }
-  //   int16_t targt = torque; 
-  //   target_torque[0] = targt; 
-  //   SetTorque(); // send torque value 
-  //   SMCCAN.writeToRegisterS(sync_cobid); // execute torque value 
-  //   cycle_time.restart(); 
-  // }
-  // if (feedback_samplingtime.hasPassed(200)) {
-  //   SendFeedback();
-  //   feedback_samplingtime.restart();
-  // }
   CAN_message_t inMsg1;
-  
-
-  // while (CANbus1.available()) { //Clear out the canbus
-  //   Serial.println("Did pass here. Should have not.");
-  //   // this should not execute, only if some extradata arrives at bad timing 
-  //   CANbus1.read(inMsg);
-  //   hexDumpAll(inMsg, &Serial);
-  // }
   
   ReadSerial(); // -- check the serial port, always at the end of line send a \r\n (arduino serial monitor does automatically if ticked the option) 
   if (string_complete) {
@@ -1198,65 +1166,15 @@ void loop() {
     Serial.print(passed_reading ); 
     Serial.print(", control_us ");
     Serial.print(control_us);
-    Serial.print(" output ");
-    Serial.print(fooutput); 
-    Serial.print(", r_output "); /*
-    Serial.print(ooutput); 
-    Serial.print(", de ");
-    Serial.print(derror); 
-    Serial.print(", pd ");
-    Serial.print(motposd); 
-    Serial.print(", p ");
-    Serial.print(motpos);
-    Serial.print(", kp ");
-    Serial.print(kpp);
-    Serial.print(", kd ");
-    Serial.print(kdd);
-    Serial.print(", ki ");
-    Serial.print(kii); */
     Serial.print(", elapsed_comm ");
     Serial.println(samplingvarelapsed);
      
     Serial.send_now();
   }
 
-  // Test communication speed. Test shows 300 us speed to retrieve data 
-  bool receivedpdo = false; 
-  int pdos_counter = 0; 
+  if (test_control.hasPassed(1)) {
 
-  if (startsine && chronosine.hasPassed(10)) {
-    float sines = ssamplitude * sinf(2.0F * pi * freq * float(millis())/1000.0F);
-    motposd = sines + spd;
-    chronosine.restart();
-  }
-
-  if (test_pdo && test_control_sdo.hasPassed(200)) {
-    samplingvarelapsed = samplingvar.elapsed();    
-    
-    test_control_sdo.restart();
-    // sync message to retrieve data 
-    SMCCAN.writeToRegisterS(sync_cobid);
-    samplingvarelapsed = samplingvar.elapsed();    
-    while (!receivedpdo) {
-      while (CANbus1.available()) { // Clear out the canbus
-        CANbus1.read(inMsg1);
-        pdos_counter++;
-        // hexDumpAll(inMsg1, &Serial);½
-      }
-      if (pdos_counter == 2) receivedpdo = true; 
-    }
-    // samplingvarelapsed = samplingvar.elapsed();
-    
-    // control algorithm .... 
-    // ... control algorithm
-    samplingvar.restart();
-    
-    // send values and sync message
-    SMCCAN.writeToRegisterS(sync_cobid);
-  }
-
-  if (test_sdo && test_control.hasPassed(1)) {
-    control_us = test_control.elapsed();
+	control_us = test_control.elapsed();
     samplingvar.restart();
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
 	SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
@@ -1264,42 +1182,8 @@ void loop() {
     // do some control 
     motpos = motor_position * 0.00157079632;
 
-	motpos = anotherPos/4000.0F;
-	motpos = motpos*60.0F/14.0F;
-
-	lmotpos = motor_position/4000.0F;
-	lmotpos = lmotpos*60.0F/14.0F;
-    
-    motspeed = (motpos - lmotpos) / 0.002F;
-    // lmotpos = motpos; 
-    //** speed controller kp = 0.04 , kd 0 , ki 2
-    // lerror = error; 
-    // error = motspeedd - motspeed;
-    // derror = (error - lerror) / 0.002F; // 2 ms 
-    // if (integralerror) 
-    //   ierror += error * 0.002F;
-
-    //**
-    
-    //** position controller 
-    lerror = error; 
-    error = motposd - motpos;
-    derror = (error - lerror) / 0.002F; // 2 ms 
-    if (integralerror) 
-      ierror += error * 0.002F;
-
-    
-    fooutput = kpp * error + kdd * derror + kii * ierror; 
-    // write the torque 
-    // 3 is the hundrer percent 
-    ooutput = 1000 * fooutput; 
-    ooutput /= 3; 
-    if (abs(ooutput) > 800) {
-      ooutput = 800 * sign(ooutput);
-    }
-    if (stopnow) 
-      ooutput = 0;
-    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)ooutput, targettorqueindex); //  1000 is 100% 
+	
+    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t) torqueRef, targettorqueindex); //  1000 is 100% 
     SMCCAN.waitForReply(nodeid, 0x00, false);
      
     test_control.restart();  
