@@ -5,6 +5,11 @@
 #include <Arduino.h>
 #include <MatrixMath.h>
 #include <math.h>
+#include <string.h>
+
+#include <SD.h>
+#include <SPI.h>
+
 
 #define OFF 0
 #define ON 1
@@ -31,7 +36,7 @@
 #define ZLOWERLIMIT -1.0 // meter
 
 #define CONTROLDELAY 20000 // us -> 20 ms
-#define SAMPLETIME 0.002
+#define SAMPLETIME 0.02
 
 // #define alpha 0.2618
 // #define beta 0.7854
@@ -55,6 +60,7 @@ public:
     double motorPosToRad(double MotorPos);
     double motorPosToDeg(double MotorPos);
     void setMotorPositionOffset(double MotorPosOffset);
+    void writeToFile(const char* fileName);
 
 private:
     double theta, zeta, eta, dtheta, dzeta, deta, z, _MotorPosOffset;
@@ -85,7 +91,7 @@ private:
     mtx_type Jt_t_MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // Jt * (((Md * dJ) + (Kv * J)) * dq) - (Kp * ex))
     mtx_type H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex[N][1]; // H - Jt * (((Md * dJ) + (Kv * J)) * dq) - (Kp * ex))
 
-    double CalculateZeta(double Theta);
+    double CalculateZeta(double Theta); 
     double CalculateEta(double Theta);
     double CalculateZ(double Theta);
     
