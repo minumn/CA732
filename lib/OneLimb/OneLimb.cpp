@@ -9,20 +9,62 @@ OneLimb::OneLimb() :
     C{0,0,0},
     G{0,0,0},
     invP{0,0,0, 0,0,0, 0,0,0},
-    Md{0,0,0, 0,0,0, 0,0,0},
+    Md{mp,0,0, 0,mp,0, 0,0,mp},
     Kv{Kvx,0,0, 0,Kvy,0, 0,0,Kvz},
     Kp{Kpx,0,0, 0,Kpy,0, 0,0,Kpz},
-    q{-1.3931, 2.1697, 0.6982}, // Realistic start values.
-    qz1{0,0,0},
+    q{-0.9528, 1.7262, 0.881}, // Realistic start values.
+    qz1{-0.9528, 1.7262, 0.881},
     dq{0,0,0},
-    x{0,0,-0.5},
-    xr{0,0,-0.5},
-    ex{0,0,0},
+    x{0,0,-0.6},
+    xr{0,0,-0.4},
+    ex{0,0,0.2},
     res{0,0,0}
 {
 	
 }
 OneLimb::~OneLimb(){}
+
+void OneLimb::writeToFile(const char* fileName){
+	File dataFile = SD.open(fileName, FILE_WRITE);
+
+	// if the file is available, write to it:
+    if (dataFile) {
+		// "theta, zeta, eta, dtheta, dzeta, deta, z, tau, ez"
+		String dataString = "";
+		dataString += theta; 
+		dataString += ", ";
+		dataString += zeta; 
+		dataString += ", ";
+		dataString += eta; 
+		dataString += ", ";
+		dataString += dtheta; 
+		dataString += ", ";
+		dataString += dzeta; 
+		dataString += ", ";
+		dataString += deta; 
+		dataString += ", ";
+		dataString += z;  
+		dataString += ", ";
+		dataString += xr[2][0]; 
+		dataString += ", ";
+		dataString += res[0][0]; 
+		dataString += ", ";
+		dataString += ex[2][0];
+
+        dataFile.println(dataString);
+        dataFile.close();
+        
+        // print to the serial port too:
+        Serial.println(dataString);
+    }
+    // if the file isn't open, pop up an error:
+    else {
+        Serial.print("error opening file '");
+		Serial.print(fileName);
+		Serial.println("'.");
+		delay(2000);
+    }
+}
 
 void OneLimb::setZref(double Z){
 	// Only values between -0.4 and -1.0 is allowed.
@@ -41,7 +83,7 @@ void OneLimb::setZref(double Z){
 }
 
 double OneLimb::motorPosToRad(double MotorPos){
-	return MotorPos*0.0006 - 0.7114;
+	return MotorPos; //*0.0006 - 0.7114;
 }
 
 double OneLimb::motorPosToDeg(double MotorPos){
@@ -98,9 +140,30 @@ void OneLimb::TorqueUpdate(){
 	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, 1, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 
 	Matrix.Multiply(*invP, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
+
+	// Matrix.Print(*res, 3, 1, "res");
+	// Matrix.Print(*dq, 3, 1, "dq");
+	// Matrix.Print(*G, 3, 1, "G");
+	// Matrix.Print(*J, 3, 3, "J");
+
+	// Matrix.Print(*invP, N, N, "invP");
+	// Matrix.Print(*H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, 1, "H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex");
+
+	// Matrix.Print(*xr,3,1,"xr");
+	// Matrix.Print(*x,3,1,"x");
+
+	// Serial.println(N);
+
+	// delay(2000);
+
+	if(res[0][0] > 10){
+		res[0][0] = 10;
+	} else if (res[0][0] < -10) {
+		res[0][0] = -10;
+	}
 }
 
-void OneLimb::invPUpdate() /* TODO: Verify */ {
+void OneLimb::invPUpdate() /* Verified */ {
 	invP[0][0] = 1;
 
 	invP[0][1] = (l*cos(eta)*cos(eta)*sinBeta*sin(theta)*sin(zeta))/(l*cos(eta)*cos(eta)*sinBeta*cos(theta)*cos(zeta) 
@@ -396,7 +459,7 @@ void OneLimb::invPUpdate() /* TODO: Verify */ {
 		+ l*cosAlpha*cosAlpha*cosBeta*cos(theta)*cos(theta)*sin(eta)*sin(zeta)*sin(zeta));
 }
 
-double OneLimb::CalculateZeta(double Theta)/* TODO: Verify */{
+double OneLimb::CalculateZeta(double Theta)/* Verified */{
 	return -2*atan(
 				sqrt(2*l*l*l*l 
 					- 4*b1*b1*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
@@ -439,7 +502,7 @@ double OneLimb::CalculateZeta(double Theta)/* TODO: Verify */{
 
 }
 
-double OneLimb::CalculateEta(double Theta) /* TODO: Verify */ {
+double OneLimb::CalculateEta(double Theta) /* Verified */ {
 	return -2*atan(
 				sqrt(2*l*l*l*l 
 					- 4*b1*b1*b1*b1*cosBetaHalf*cosBetaHalf*cosBetaHalf*cosBetaHalf 
@@ -515,7 +578,7 @@ double OneLimb::CalculateEta(double Theta) /* TODO: Verify */ {
 
 }
 
-double OneLimb::CalculateZ(double Theta){
+double OneLimb::CalculateZ(double Theta) /* Verified */{
 	return -sqrt(b1*b1*cos(theta)*cos(theta) 
 	+ l*l - b1*b1 
 	- b1*b1*cosBeta*cosBeta*cos(theta)*cos(theta)) 
@@ -525,7 +588,7 @@ double OneLimb::CalculateZ(double Theta){
 void OneLimb::qUpdate(double AbsMotorPosition){
 
 	// Old q is now qz1 (q delayed)
-	std::copy(&q[0][0], &q[0][0]+N*N, &qz1[0][0]);
+	std::copy(&q[0][0], &q[0][0]+N, &qz1[0][0]);
 
 	// Measured theta
 	theta = motorPosToRad(AbsMotorPosition);
@@ -556,7 +619,7 @@ void OneLimb::CUpdate(){
 	C[0][0] = 0;
 }
 
-void OneLimb::GUpdate(){
+void OneLimb::GUpdate()/* Verified */{
 	
 	G[0][0] = b1*g*mL*sinBeta*sin(theta) 
         + (b1*g*mb*sinBeta*sin(theta))/2 
@@ -586,7 +649,7 @@ void OneLimb::HUpdate(){
 }
 
 void OneLimb::exUpdate(){
-	Matrix.Subtract(*x, *xr, N, 1, *ex);
+	Matrix.Subtract(*xr, *x, N, 1, *ex);
 }
 
 void OneLimb::JUpdate() /* Have been verified */ {
