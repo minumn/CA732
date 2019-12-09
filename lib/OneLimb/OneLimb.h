@@ -53,6 +53,7 @@ public:
     void setZref(double Z);
     void newData(double AbsMotorPos);
     double motorPosToRad(double MotorPos);
+    double motorPosToDeg(double MotorPos);
     void setMotorPositionOffset(double MotorPosOffset);
 
 private:
