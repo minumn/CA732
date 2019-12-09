@@ -1259,25 +1259,19 @@ void loop() {
     control_us = test_control.elapsed();
     samplingvar.restart();
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-	SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
+	  SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
     passed_reading = samplingvar.elapsed(); 
     // do some control 
-    motpos = motor_position * 0.00157079632;
-
-	motpos = anotherPos/4000.0F;
-	motpos = motpos*60.0F/14.0F;
-
-	lmotpos = motor_position/4000.0F;
-	lmotpos = lmotpos*60.0F/14.0F;
-    
+    motpos = motor_position * 0.00157079632;    
     motspeed = (motpos - lmotpos) / 0.002F;
-    // lmotpos = motpos; 
+    
+    lmotpos = motpos; 
     //** speed controller kp = 0.04 , kd 0 , ki 2
-    // lerror = error; 
-    // error = motspeedd - motspeed;
-    // derror = (error - lerror) / 0.002F; // 2 ms 
-    // if (integralerror) 
-    //   ierror += error * 0.002F;
+     lerror = error; 
+     error = motspeedd - motspeed;
+     derror = (error - lerror) / 0.002F; // 2 ms 
+     if (integralerror) 
+       ierror += error * 0.002F;
 
     //**
     
