@@ -85,13 +85,13 @@ void OneLimb::TorqueUpdate(){
 
 	Matrix.Multiply(*MddJ_p_KvJ, *dq, N, N, 1, *MddJ_p_KvJ_t_dq);
 
-	Matrix.Multiply(*Kp, *ex, N, N, N, *Kpex);
+	Matrix.Multiply(*Kp, *ex, N, N, 1, *Kpex);
 
-	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, N, *MddJ_p_KvJ_t_dq_m_Kpex);
+	Matrix.Subtract(*MddJ_p_KvJ_t_dq, *Kpex, N, 1, *MddJ_p_KvJ_t_dq_m_Kpex);
 
 	Matrix.Multiply(*Jt, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 	
-	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
+	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, 1, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 
 	Matrix.Multiply(*invP, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
 }
