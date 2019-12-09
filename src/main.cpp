@@ -593,7 +593,7 @@ void loop() {
   // SMCCAN.readRequestFromRegister(nodeid, (int8_t)0x00, 0x6041); // (node, subindex, pos mode, index)
   // SMCCAN.waitForReply(nodeid, 0x00, true);
   Serial.println("ok 7");
-  if (1 && wait_feedback.hasPassed(feedinterval)) {
+  if (wait_feedback.hasPassed(feedinterval)) {
     Serial.send_now();
     Serial.println("ok 7.1");
     Serial.send_now();
@@ -618,29 +618,32 @@ void loop() {
   }
   Serial.println("ok 8");
 
-  if (control_time.hasPassed(CONTROLDELAY)) {
-    Serial.println("ok 9");
+	if (control_time.hasPassed(CONTROLDELAY)) {
+		Serial.println("ok 9");
 
-	  control_us = control_time.elapsed();
-    Serial.println("ok 11");
-    control_time.restart(); 
-    Serial.println("ok 12");
-    //samplingvar.restart();
-    Serial.println("ok 13");
-    SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-    Serial.println("ok 14");
-	  SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
-    Serial.println("ok 15");
-    //passed_reading = samplingvar.elapsed(); 
-    Serial.println("ok 16");
-    // do some control 
-	  torqueRef = oneLimb.getTorque(motor_position);
-    Serial.println("ok 17");
-	
-    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t) torqueRef, targettorqueindex); //  1000 is 100% 
-    Serial.println("ok 18");
-    SMCCAN.waitForReply(nodeid, 0x00, false);
-    Serial.println("ok 19");
+		control_us = control_time.elapsed();
+		Serial.println("ok 11");
+		control_time.restart(); 
+		Serial.println("ok 12");
+		//samplingvar.restart();
+		Serial.println("ok 13");
+		SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
+		Serial.println("ok 14");
+		SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
+		Serial.println("ok 15");
+		//passed_reading = samplingvar.elapsed(); 
+		Serial.println("ok 16");
+		// do some control 
+		torqueRef = oneLimb.getTorque(motor_position);
+		// Serial.print("TorqueRef: ");
+		// Serial.println(torqueRef);
+		// Serial.print("MotorPosition: ");
+		// Serial.println(motor_position);
+		
+		// SMCCAN.writeToRegister(nodeid, 0x00, (int16_t) torqueRef, targettorqueindex); //  1000 is 100% 
+		// Serial.println("ok 18");
+		// SMCCAN.waitForReply(nodeid, 0x00, false);
+		// Serial.println("ok 19");
       
   }
   // SMCCAN.readRequestFromRegister(nodeid, (int8_t)0x00, 0x6064); // (node, subindex, pos mode, index)
