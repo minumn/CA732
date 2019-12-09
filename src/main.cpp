@@ -84,6 +84,8 @@ int32_t motor_position = 0;
 uint32_t anotherPos = 0;
 uint8_t npdos = 2; 
 unsigned long feedinterval = 100; 
+int32_t statusT = 0;
+bool stopnow = false;
 // holding value variables 
 uint16_t statusmotor = 0x00;
 int32_t positionmotor = 0x00;
@@ -574,7 +576,7 @@ void setup() {
   
   SMCCAN.writeToRegisterS(sync_cobid);
   LED(OFF);
-  oneLimb.setZref(-0.4);
+  oneLimb.setZref(-0.6);
   Serial.println("ok 4");
   samplingvar.hasPassed(1);
   Serial.println("ok 4.1");
@@ -583,22 +585,22 @@ void setup() {
 }
 ///////*************** MAIN PROGRAM ******//////////////////
 void loop() {  
-  Serial.println("ok 5");
+  // Serial.println("ok 5");
   ReadSerial(); // -- check the serial port, always at the end of line send a \r\n (arduino serial monitor does automatically if ticked the option) 
-  Serial.println("ok 6");
+  // Serial.println("ok 6");
   if (string_complete) {
     input_string = "";
     string_complete = false;
   }
   // SMCCAN.readRequestFromRegister(nodeid, (int8_t)0x00, 0x6041); // (node, subindex, pos mode, index)
   // SMCCAN.waitForReply(nodeid, 0x00, true);
-  Serial.println("ok 7");
+  // Serial.println("ok 7");
   if (wait_feedback.hasPassed(feedinterval)) {
-    Serial.send_now();
-    Serial.println("ok 7.1");
-    Serial.send_now();
+    // Serial.send_now();
+    // Serial.println("ok 7.1");
+    // Serial.send_now();
     wait_feedback.restart();
-    Serial.println("ok 7.2");
+    // Serial.println("ok 7.2");
     Serial.print("loop | Motor position ticks: "); 
     Serial.print(motor_position);
     Serial.print(", "); 
@@ -616,23 +618,23 @@ void loop() {
      
     Serial.send_now();
   }
-  Serial.println("ok 8");
+  // Serial.println("ok 8");
 
 	if (control_time.hasPassed(CONTROLDELAY)) {
-		Serial.println("ok 9");
+		// Serial.println("ok 9");
 
 		control_us = control_time.elapsed();
-		Serial.println("ok 11");
+		// Serial.println("ok 11");
 		control_time.restart(); 
-		Serial.println("ok 12");
-		//samplingvar.restart();
-		Serial.println("ok 13");
+		// Serial.println("ok 12");
+		samplingvar.restart();
+		// Serial.println("ok 13");
 		SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-		Serial.println("ok 14");
-		SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
-		Serial.println("ok 15");
-		//passed_reading = samplingvar.elapsed(); 
-		Serial.println("ok 16");
+		// Serial.println("ok 14");
+		// SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
+		// Serial.println("ok 15");
+		passed_reading = samplingvar.elapsed(); 
+		// Serial.println("ok 16");
 		// do some control 
 		torqueRef = oneLimb.getTorque(motor_position);
 		// Serial.print("TorqueRef: ");
