@@ -557,7 +557,9 @@ void CANsmc::getUInt32FromRegister(
   uint8_t nodeid, uint16_t object_index, uint8_t subindex, 
   uint32_t * number32/*, bool dump = false*/) {
   readRequestFromRegister(nodeid, subindex, object_index);
-  waitForReply(nodeid, subindex, &number32);//, dump);
+  delayMicroseconds(300);
+  waitForReplyuInt32(nodeid, subindex, number32, false);
+  // waitForReply(nodeid, subindex, &number32);//, dump);
 }
 
 void CANsmc::getInt32FromRegister(

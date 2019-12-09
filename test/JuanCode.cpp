@@ -47,7 +47,7 @@ Chrono statemachine_time;
 Chrono test_control;
 Chrono test_control_sdo(Chrono::MICROS);
 Chrono chronosine;
-uint8_t nodeid = 0x04;
+uint8_t nodeid = 0x02;
 String input_string = "";
 bool string_complete = false;
 bool ddither = false; 
@@ -91,6 +91,7 @@ uint16_t status_index = 0x6041;
 uint32_t pdosid[2] = {T_PDO2_id, T_PDO3_id};
 uint32_t pdo_cobsid[20]; 
 int32_t motor_position = 0;
+uint32_t anotherPos = 0;
 uint8_t npdos = 2; 
 unsigned long feedinterval = 100; 
 // holding value variables 
@@ -443,12 +444,29 @@ void deactivatepdos() {
   SMCCAN.deactivatePDO(nodeid, rpdo2par, R_PDO2_id, true);
 }
 
-void setEncoderUnits() {
+void setEncoderUnits() { 
   SMCCAN.writeToRegister(nodesid[0], 0x01, (uint32_t)0xFA0, 0x608F);
   SMCCAN.waitForReply(nodeid, 0x01, true);
   delay(10);
   SMCCAN.readRequestFromRegister(nodesid[0], 0x01, 0x608F);
   SMCCAN.waitForReply(nodeid, 0x01, true);
+  delay(10);
+
+  // SMCCAN.writeToRegisterS(sync_cobid);
+  SMCCAN.writeToRegister(nodesid[0], 0x01, (uint32_t) (10000), 0x608F);
+  SMCCAN.waitForReply(nodesid[0], 0x01, true);
+  delay(10);
+  SMCCAN.writeToRegister(nodesid[0], 0x02, (uint32_t) (1), 0x608F);
+  SMCCAN.waitForReply(nodesid[0], 0x02, true);
+  delay(10);
+  SMCCAN.writeToRegister(nodesid[0], 0x01, (uint32_t) (60), 0x6091);
+  SMCCAN.waitForReply(nodesid[0], 0x01, true);
+  delay(10);
+  SMCCAN.writeToRegister(nodesid[0], 0x02, (uint32_t) (14), 0x6091);
+  SMCCAN.waitForReply(nodesid[0], 0x02, true);
+  delay(10);
+  
+	
 }
 
 void setTorqueSettings() {
@@ -652,6 +670,23 @@ void testTorque() {
   Serial.println("Done");
 }
 
+void saveApplicationData(){
+	uint32_t answer = 0;
+	SMCCAN.writeToRegister(nodeid, 0x03, (uint32_t)0x65766173, 0x1010);
+	SMCCAN.waitForReplyuInt32(nodeid, 0x03, &answer, false);
+			
+	while(!answer){
+		delay(500);
+		SMCCAN.readRequestFromRegister(nodeid, 0x03, 0x1010);
+		SMCCAN.waitForReply(nodeid,0x03, true);
+		Serial.print("Answer received: ");
+		Serial.println(answer);
+	}
+	Serial.println("Final answer received: " + answer);
+	Serial.print(answer);
+	delay(5000);
+}
+
 
 void OnSetup() {
   
@@ -841,6 +876,14 @@ void OnReceived() {
       erriv[i] = 0.0; 
     }
     Serial.println("OK");
+  }
+  else if (myMessenger.checkString("setenc")) {
+  	setEncoderUnits(); 
+    Serial.println("OK enc");
+  } 
+  else if (myMessenger.checkString("saveappdata")) {
+    Serial.println("OK trying to save");
+  	saveApplicationData(); 
   }
   else if (myMessenger.checkString("st")) {
     Serial.println("OK, exiting");
@@ -1077,7 +1120,7 @@ void ReadSerial() {
   }
 }
 
-//////************ SETUP **************//////////////////////
+//////**************************//////////////////////
 void setup() {
   // Initiate Serial Communication
   Serial.begin(250000);
@@ -1096,6 +1139,7 @@ void setup() {
   setTorqueSettings();
   
   SMCCAN.writeToRegisterS(sync_cobid);
+  
   // OnSetup();
   // while(true) {
   //   Serial.print("here i came");
@@ -1146,6 +1190,12 @@ void loop() {
     wait_feedback.restart();
     Serial.print("loop "); 
     Serial.print(motor_position);
+    Serial.print(" + "); 
+    Serial.print(anotherPos);
+    Serial.print(" + "); 
+    Serial.print(motpos, 4);
+    Serial.print(" + "); 
+    Serial.print(lmotpos, 4);
     Serial.print(" reading_us ");
     Serial.print(passed_reading ); 
     Serial.print(" control_us ");
@@ -1211,12 +1261,19 @@ void loop() {
     control_us = test_control.elapsed();
     samplingvar.restart();
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
+	SMCCAN.getUInt32FromRegister(nodesid[0], 0x205A, 0x0, &anotherPos);
     passed_reading = samplingvar.elapsed(); 
     // do some control 
     motpos = motor_position * 0.00157079632;
+
+	motpos = anotherPos/4000.0F;
+	motpos = motpos*60.0F/14.0F;
+
+	lmotpos = motor_position/4000.0F;
+	lmotpos = lmotpos*60.0F/14.0F;
     
     motspeed = (motpos - lmotpos) / 0.002F;
-    lmotpos = motpos; 
+    // lmotpos = motpos; 
     //** speed controller kp = 0.04 , kd 0 , ki 2
     // lerror = error; 
     // error = motspeedd - motspeed;
