@@ -93,7 +93,7 @@ uint32_t pdo_cobsid[20];
 int32_t motor_position = 0;
 uint32_t anotherPos = 0;
 uint8_t npdos = 2; 
-unsigned long feedinterval = 100; 
+unsigned long feedinterval = 1000; 
 // holding value variables 
 uint16_t statusmotor = 0x00;
 int32_t positionmotor = 0x00;
@@ -968,7 +968,7 @@ void OnReceived() {
     Serial.println("OK, stop");
     stopnow = true; 
   }
-  else if (myMessenger.checkString("st")) {
+  else if (myMessenger.checkString("start")) {
     Serial.println("OK, start");
     motposd = motpos;
     stopnow = false; 
@@ -1092,7 +1092,6 @@ void OnReceived() {
     Serial.send_now();
     setEncoderUnits(); 
   }
-
   else if (myMessenger.checkString("setup")) {
     Serial.println("OK, setup");
     Serial.send_now();
@@ -1103,11 +1102,12 @@ void OnReceived() {
     Serial.send_now();
     setTorqueSettings(); 
   }
-  
-
   else if (myMessenger.checkString("toff")) {
     toff = true; 
     Serial.println("OK");
+  } 
+  else {
+    Serial.println("Command not recognized.");
   }
   // Clean up the serial port
   while (myMessenger.available())
@@ -1188,14 +1188,12 @@ void loop() {
   // SMCCAN.waitForReply(nodeid, 0x00, true);
   if (wait_feedback.hasPassed(feedinterval)) {
     wait_feedback.restart();
-    Serial.print("loop "); 
+    Serial.print("loop | stop?: ");
+    Serial.print(stopnow);
+    Serial.print(", Pos: "); 
     Serial.print(motor_position);
     Serial.print(" + "); 
     Serial.print(anotherPos);
-    Serial.print(" + "); 
-    Serial.print(motpos, 4);
-    Serial.print(" + "); 
-    Serial.print(lmotpos, 4);
     Serial.print(" reading_us ");
     Serial.print(passed_reading ); 
     Serial.print(" control_us ");
@@ -1257,7 +1255,7 @@ void loop() {
     SMCCAN.writeToRegisterS(sync_cobid);
   }
 
-  if (test_sdo && test_control.hasPassed(1)) {
+  if (test_sdo && test_control.hasPassed(2)) {
     control_us = test_control.elapsed();
     samplingvar.restart();
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
@@ -1265,21 +1263,15 @@ void loop() {
     passed_reading = samplingvar.elapsed(); 
     // do some control 
     motpos = motor_position * 0.00157079632;
-
-	motpos = anotherPos/4000.0F;
-	motpos = motpos*60.0F/14.0F;
-
-	lmotpos = motor_position/4000.0F;
-	lmotpos = lmotpos*60.0F/14.0F;
     
     motspeed = (motpos - lmotpos) / 0.002F;
-    // lmotpos = motpos; 
-    //** speed controller kp = 0.04 , kd 0 , ki 2
-    // lerror = error; 
-    // error = motspeedd - motspeed;
-    // derror = (error - lerror) / 0.002F; // 2 ms 
-    // if (integralerror) 
-    //   ierror += error * 0.002F;
+    lmotpos = motpos; 
+    // ** speed controller kp = 0.04 , kd 0 , ki 2
+    lerror = error; 
+    error = motspeedd - motspeed;
+    derror = (error - lerror) / 0.002F; // 2 ms 
+    if (integralerror) 
+      ierror += error * 0.002F;
 
     //**
     
@@ -1299,8 +1291,9 @@ void loop() {
     if (abs(ooutput) > 800) {
       ooutput = 800 * sign(ooutput);
     }
-    if (stopnow) 
+    if (stopnow) {
       ooutput = 0;
+    }
     SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)ooutput, targettorqueindex); //  1000 is 100% 
     SMCCAN.waitForReply(nodeid, 0x00, false);
      
