@@ -33,10 +33,10 @@
 #define mb 0.3 // kg
 
 #define ZUPPERLIMIT -0.4 // meter
-#define ZLOWERLIMIT -1.0 // meter
+#define ZLOWERLIMIT -0.6 // meter
 
-#define CONTROLDELAY 20000 // us -> 20 ms
-#define SAMPLETIME 0.02
+#define CONTROLDELAY 10000 // us -> 20 ms
+#define SAMPLETIME 0.01
 
 // #define alpha 0.2618
 // #define beta 0.7854

@@ -83,11 +83,11 @@ void OneLimb::setZref(double Z){
 }
 
 double OneLimb::motorPosToRad(double MotorPos){
-	return MotorPos*0.0006 - 0.7114;
+	return (MotorPos + _MotorPosOffset)*0.0006 - 0.7114;
 }
 
 double OneLimb::motorPosToDeg(double MotorPos){
-	return MotorPos*0.0357 - 40.76;
+	return (MotorPos + _MotorPosOffset)*0.0357 - 40.76;
 }
 
 void OneLimb::setMotorPositionOffset(double MotorPosOffset){
@@ -137,7 +137,7 @@ void OneLimb::TorqueUpdate(){
 
 	Matrix.Multiply(*Jt, *MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 	
-	Matrix.Subtract(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, 1, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
+	Matrix.Add(*H, *MddJ_p_KvJ_t_dq_m_Kpex, N, 1, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex);
 
 	Matrix.Multiply(*invP, *H_m_Jt_t_MddJ_p_KvJ_t_dq_m_Kpex, N, N, 1, *res);
 
