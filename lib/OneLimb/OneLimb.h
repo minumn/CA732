@@ -61,6 +61,7 @@ public:
     double motorPosToDeg(double MotorPos);
     void setMotorPositionOffset(double MotorPosOffset);
     void writeToFile(const char* fileName);
+    double CalculateZ(double Theta);
 
 private:
     double theta, zeta, eta, dtheta, dzeta, deta, z, _MotorPosOffset;
@@ -93,7 +94,6 @@ private:
 
     double CalculateZeta(double Theta); 
     double CalculateEta(double Theta);
-    double CalculateZ(double Theta);
     
     void JUpdate();
     void dJUpdate();
