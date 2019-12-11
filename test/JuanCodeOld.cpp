@@ -465,8 +465,6 @@ void setEncoderUnits() {
   SMCCAN.writeToRegister(nodesid[0], 0x02, (uint32_t) (14), 0x6091);
   SMCCAN.waitForReply(nodesid[0], 0x02, true);
   delay(10);
-  
-	
 }
 
 void setTorqueSettings() {
