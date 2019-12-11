@@ -5,6 +5,9 @@
 #define object_index_32 0x2012
 #define object_index_16 0x2014
 
+#define status_index 0x6041
+#define position_actual_value_index 0x6064
+
 #define MODE_REG 2
 #define P_SOLL 3
 #define V_SOLL 5
