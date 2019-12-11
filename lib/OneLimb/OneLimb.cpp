@@ -83,7 +83,7 @@ void OneLimb::setZref(double Z){
 }
 
 double OneLimb::motorPosToRad(double MotorPos){
-	return MotorPos; //*0.0006 - 0.7114;
+	return MotorPos*0.0006 - 0.7114;
 }
 
 double OneLimb::motorPosToDeg(double MotorPos){
