@@ -384,6 +384,73 @@ void testTorque() {
   Serial.println("Done");
 }
 
+void OnReceived();
+void ReadSerial();
+
+void GetNewMotorPosition(){
+    canDelayTimer_us.restart();
+    SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
+    passed_reading = canDelayTimer_us.elapsed(); 
+}
+
+//////************ SETUP **************//////////////////////
+void setup() {
+  // Initiate Serial Communication
+  Serial.begin(250000);
+  // Activate the CAN bus device
+  pinMode(28, OUTPUT);
+  pinMode(35, OUTPUT);
+  digitalWrite(28, LOW);
+  digitalWrite(35, LOW);
+
+  myMessenger.attach(OnReceived);
+  CANbus1.begin();
+
+  delay(500);
+
+  Serial.println("Starting");
+  oneLimb.setZref(-0.5);
+  
+  setTorqueSettings();
+}
+
+///////*************** MAIN PROGRAM ******//////////////////
+void loop() {
+  
+  ReadSerial(); // -- check the serial port, always at the end of line send a \r\n (arduino serial monitor does automatically if ticked the option) 
+  
+  if (feedbackTimer_ms.hasPassed(feedbackInterval_ms)) {
+    feedbackTimer_ms.restart();
+    SendFeedback();
+  }
+
+  if (ControlTimer_us.hasPassed(controlInterval_us)) {
+    control_us = ControlTimer_us.elapsed();
+    ControlTimer_us.restart();
+
+    GetNewMotorPosition();
+
+    // do some control 
+    torque = kpp*oneLimb.getTorque(motor_position);
+
+    if(abs(torque) > 1000)
+        torque = sign(torque)*1000;
+   
+    if (stopnow) 
+      torque = 0;
+
+    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorqueindex); //  1000 is 100% 
+    SMCCAN.waitForReply(nodeid, 0x00, false);
+  }
+}
+
+//Read the serial for the Messenger
+void ReadSerial() {
+  while (Serial.available()) {
+    myMessenger.process(Serial.read());
+  }
+}
+
 //Method to check the received message
 void OnReceived() {
   if (myMessenger.checkString("setenc")) {
@@ -461,67 +528,4 @@ void OnReceived() {
   // Clean up the serial port
   while (myMessenger.available())
     myMessenger.readInt();
-}
-//Read the serial for the Messenger
-void ReadSerial() {
-  while (Serial.available()) {
-    myMessenger.process(Serial.read());
-  }
-}
-
-void GetNewMotorPosition(){
-    canDelayTimer_us.restart();
-    SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-    passed_reading = canDelayTimer_us.elapsed(); 
-}
-
-//////************ SETUP **************//////////////////////
-void setup() {
-  // Initiate Serial Communication
-  Serial.begin(250000);
-  // Activate the CAN bus device
-  pinMode(28, OUTPUT);
-  pinMode(35, OUTPUT);
-  digitalWrite(28, LOW);
-  digitalWrite(35, LOW);
-
-  myMessenger.attach(OnReceived);
-  CANbus1.begin();
-
-  delay(500);
-
-  Serial.println("Starting");
-  oneLimb.setZref(-0.5);
-  
-  setTorqueSettings();
-}
-
-///////*************** MAIN PROGRAM ******//////////////////
-void loop() {
-  
-  ReadSerial(); // -- check the serial port, always at the end of line send a \r\n (arduino serial monitor does automatically if ticked the option) 
-  
-  if (feedbackTimer_ms.hasPassed(feedbackInterval_ms)) {
-    feedbackTimer_ms.restart();
-    SendFeedback();
-  }
-
-  if (ControlTimer_us.hasPassed(controlInterval_us)) {
-    control_us = ControlTimer_us.elapsed();
-    ControlTimer_us.restart();
-
-    GetNewMotorPosition();
-
-    // do some control 
-    torque = kpp*oneLimb.getTorque(motor_position);
-
-    if(abs(torque) > 1000)
-        torque = sign(torque)*1000;
-   
-    if (stopnow) 
-      torque = 0;
-
-    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorqueindex); //  1000 is 100% 
-    SMCCAN.waitForReply(nodeid, 0x00, false);
-  }
 }
