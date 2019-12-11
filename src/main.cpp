@@ -76,8 +76,6 @@ uint16_t tpdo1map = 0x1A00;
 uint16_t tpdo2map = 0X1A01;
 uint16_t tpdo3map = 0x1A02;
 uint32_t sync_cobid = 0x80;
-uint16_t control_index = 0x6040;
-uint16_t status_index = 0x6041;
 uint32_t pdosid[2] = {T_PDO2_id, T_PDO3_id};
 uint32_t pdo_cobsid[20]; 
 int32_t motor_position = 0;
