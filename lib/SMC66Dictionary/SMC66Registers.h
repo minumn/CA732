@@ -8,6 +8,9 @@
 #define status_index 0x6041
 #define position_actual_value_index 0x6064
 #define control_index 0x6040
+#define targettorque_index 0x6071
+
+
 
 #define MODE_REG 2
 #define P_SOLL 3
