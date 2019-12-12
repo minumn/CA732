@@ -61,21 +61,28 @@ uint16_t tpdo2map = 0X1A01;
 uint16_t tpdo3map = 0x1A02;
 uint32_t sync_cobid = 0x80;
 
+String fileBasis = "LOG";
+String fileName;
+const char* fileNamePointer;
+uint16_t counter = 0;
+
 int32_t motor_position = 0;
 unsigned long feedinterval = 300; 
 
 uint16_t statusmotor = 0x00;
 int16_t actual_torque = 0x00;
 int32_t statusT = 0x00;
-uint16_t targettorqueindex = 0x6071; 
-unsigned long passed_reading = 0;
+
 unsigned long canDelay_us = 0;
 unsigned long control_us = 0;
 
 double torque = 0;
 bool stopnow = true; 
-
+bool loggingActive = false;
 //////************ FUNCTIONS ************//////////////////
+
+void OnReceived();
+void ReadSerial();
 
 void SetTorque() {
 
@@ -177,8 +184,10 @@ void SendFeedback() {
     Serial.print(", stopnow: ");
     Serial.print(stopnow);    
     Serial.print(", CAN delay us: ");
-    Serial.print(passed_reading); 
+    Serial.print(canDelay_us); 
     Serial.println(".\n");
+    Serial.print("Current file name: ");
+    Serial.println(fileNamePointer);
      
     Serial.send_now();
 }
@@ -335,7 +344,7 @@ void testTorque() {
   // SMCCAN.waitForReply(nodeid, 0x00, true);
 
   Serial.println("Setting torque to zero");
-  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)0, targettorqueindex);
+  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)0, targettorque_index);
   SMCCAN.waitForReply(nodeid, 0x00, true);
 
   Serial.println("Ready to switch on");
@@ -359,7 +368,7 @@ void testTorque() {
   
 
   Serial.println("Setting torque to 10p");
-  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)100, targettorqueindex); //  1000 is 100% 
+  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)100, targettorque_index); //  1000 is 100% 
   SMCCAN.waitForReply(nodeid, 0x00, true);    
   Serial.send_now();
   Serial.println("Max torque setting");
@@ -379,18 +388,15 @@ void testTorque() {
   
   
   Serial.println("Setting torque to zero");
-  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)0, targettorqueindex);
+  SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)0, targettorque_index);
   SMCCAN.waitForReply(nodeid, 0x00, true);    
   Serial.println("Done");
 }
 
-void OnReceived();
-void ReadSerial();
-
 void GetNewMotorPosition(){
     canDelayTimer_us.restart();
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-    passed_reading = canDelayTimer_us.elapsed(); 
+    canDelay_us = canDelayTimer_us.elapsed(); 
 }
 
 //////************ SETUP **************//////////////////////
@@ -402,6 +408,10 @@ void setup() {
   pinMode(35, OUTPUT);
   digitalWrite(28, LOW);
   digitalWrite(35, LOW);
+
+  fileName.reserve(200);
+  fileName = fileBasis + ".txt";
+  fileNamePointer = fileName.c_str();
 
   myMessenger.attach(OnReceived);
   CANbus1.begin();
@@ -439,8 +449,12 @@ void loop() {
     if (stopnow) 
       torque = 0;
 
-    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorqueindex); //  1000 is 100% 
+    SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorque_index); //  1000 is 100% 
     SMCCAN.waitForReply(nodeid, 0x00, false);
+
+    if(loggingActive){
+      oneLimb.writeToFile(fileNamePointer);
+    }
   }
 }
 
@@ -463,6 +477,33 @@ void OnReceived() {
   	oneLimb.setMotorPositionOffset(offset);
     Serial.println(offset);
   } 
+  else if (myMessenger.checkString("stiffness")) {
+    Serial.println("OK, stiffness");
+    float stiffness = myMessenger.readFloat();
+  	oneLimb.setStiffness(stiffness);
+    Serial.println(stiffness);
+  } 
+  else if (myMessenger.checkString("damping")) {
+    Serial.println("OK, damping");
+    float damping = myMessenger.readFloat();
+  	oneLimb.setDamping(damping);
+    Serial.println(damping);
+  } 
+  else if (myMessenger.checkString("sampletime")) {
+    Serial.println("OK, sampletime");
+    float sampletime = myMessenger.readFloat();
+  	oneLimb.setSampleTime(sampletime);
+    Serial.println(sampletime);
+  } 
+  else if (myMessenger.checkString("log")) {
+    Serial.println("OK, log");
+
+    while(SD.exists(fileNamePointer)){
+      ++counter;
+      fileName = fileBasis + counter + ".txt";
+    }
+    loggingActive = true;
+  } 
   else if (myMessenger.checkString("setz")) {
     Serial.println("OK, z");
     int zpos = myMessenger.readInt();
@@ -475,7 +516,7 @@ void OnReceived() {
   }
   else if (myMessenger.checkString("status")) {
     Serial.println("OK, status");
-    SMCCAN.getInt32FromRegister(nodesid[0], status_index, 0x0, &statusT); 
+    SMCCAN.getInt32FromRegister(nodesid[0], (uint16_t)status_index, 0x0, &statusT); 
     char str[18];
     __itoa(statusT,str,2);
     Serial.print("0b");
@@ -505,6 +546,7 @@ void OnReceived() {
   else if (myMessenger.checkString("s")) {
     Serial.println("OK, stop");
     stopnow = true; 
+    loggingActive = false;
   }
   else if (myMessenger.checkString("st")) {
     Serial.println("OK, start");
