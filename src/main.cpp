@@ -894,7 +894,7 @@ void OnReceived() {
   } 
   else if (myMessenger.checkString("setz")) {
     Serial.println("OK, z");
-    int zpos = myMessenger.readInt();
+    float zpos = myMessenger.readFloat();
   	oneLimb.setZref(zpos);
     Serial.println(zpos);
   } 
@@ -1162,7 +1162,7 @@ void setup() {
   
   setTorqueSettings();
   
-  SMCCAN.writeToRegisterS(sync_cobid);
+  // SMCCAN.writeToRegisterS(sync_cobid);
 }
 ///////*************** MAIN PROGRAM ******//////////////////
 void loop() {
