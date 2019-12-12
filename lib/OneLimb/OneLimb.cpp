@@ -2,6 +2,8 @@
 #include "OneLimb.h"
 
 OneLimb::OneLimb() :
+	Kpz(200),
+	Kvz(41.25),
     J{0,0,0, 0,0,0, 0,0,0},
     dJ{0,0,0, 0,0,0, 0,0,0},
     Jt{0,0,0, 0,0,0, 0,0,0},
@@ -30,6 +32,7 @@ void OneLimb::writeToFile(const char* fileName){
 	// if the file is available, write to it:
     if (dataFile) {
 		// "theta, zeta, eta, dtheta, dzeta, deta, z, tau, ez"
+		//  z zr ez zeta eta theta dtheta dzeta deta torque micros
 		String dataString = "";
 		dataString += theta; 
 		dataString += ", ";
@@ -47,9 +50,11 @@ void OneLimb::writeToFile(const char* fileName){
 		dataString += ", ";
 		dataString += xr[2][0]; 
 		dataString += ", ";
+		dataString += ex[2][0];
+		dataString += ", ";
 		dataString += res[0][0]; 
 		dataString += ", ";
-		dataString += ex[2][0];
+		dataString += timer; 
 
         dataFile.println(dataString);
         dataFile.close();
@@ -64,6 +69,10 @@ void OneLimb::writeToFile(const char* fileName){
 		Serial.println("'.");
 		delay(2000);
     }
+}
+
+void OneLimb::startLogging(){
+
 }
 
 void OneLimb::setZref(double Z){
@@ -93,6 +102,21 @@ double OneLimb::motorPosToDeg(double MotorPos){
 void OneLimb::setMotorPositionOffset(double MotorPosOffset){
 	_MotorPosOffset = MotorPosOffset;
 }
+
+void OneLimb::setStiffness(float kp){
+	if (kp < 0) kp = 0;
+	Kpz = kp;
+}
+
+void OneLimb::setDamping(float kv){
+	if (kv < 0) kv = 0;
+	Kvz = kv;
+}
+
+void OneLimb::setSampleTime(int ts){
+	
+}
+
 
 void OneLimb::newData(double AbsMotorPosition){
 	qUpdate(AbsMotorPosition);

@@ -18,11 +18,9 @@
 
 #define Kvx 40.83
 #define Kvy 52.5
-#define Kvz 41.25
 
 #define Kpx 1000
 #define Kpy 500
-#define Kpz 200
 
 #define l 0.55 // meter
 #define L 0.55 // meter
@@ -63,8 +61,15 @@ public:
     void writeToFile(const char* fileName);
     double CalculateZ(double Theta);
 
+    void startLogging();
+    void setStiffness(float kpz);
+    void setDamping(float kvz);
+    void setSampleTime(int ts);
+
 private:
     double theta, zeta, eta, dtheta, dzeta, deta, z, _MotorPosOffset;
+    float Kpz,Kvz;
+    long int timer;
     mtx_type J[N][N]; // Jacobian
     mtx_type dJ[N][N]; // Derrivitive Jacobian
     mtx_type Jt[N][N]; // Jacobian transposed
