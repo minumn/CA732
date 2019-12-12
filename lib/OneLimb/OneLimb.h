@@ -18,9 +18,11 @@
 
 #define Kvx 40.83
 #define Kvy 52.5
+#define Kvz 41.25
 
 #define Kpx 1000
 #define Kpy 500
+#define Kpz 200 
 
 #define l 0.55 // meter
 #define L 0.55 // meter

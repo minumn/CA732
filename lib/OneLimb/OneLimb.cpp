@@ -2,8 +2,6 @@
 #include "OneLimb.h"
 
 OneLimb::OneLimb() :
-	Kpz(200),
-	Kvz(41.25),
     J{0,0,0, 0,0,0, 0,0,0},
     dJ{0,0,0, 0,0,0, 0,0,0},
     Jt{0,0,0, 0,0,0, 0,0,0},
@@ -105,12 +103,12 @@ void OneLimb::setMotorPositionOffset(double MotorPosOffset){
 
 void OneLimb::setStiffness(float kp){
 	if (kp < 0) kp = 0;
-	Kpz = kp;
+	Kp[3][3] = kp;
 }
 
 void OneLimb::setDamping(float kv){
 	if (kv < 0) kv = 0;
-	Kvz = kv;
+	Kv[3][3] = kv;
 }
 
 void OneLimb::setSampleTime(int ts){
