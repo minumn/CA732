@@ -36,8 +36,6 @@ uint8_t nodeid = MOTORINUSE;
 uint8_t nodesid[4] = {MOTORINUSE, 0x2 ,0x3, 0x4};
 
 CANsmc SMCCAN(&CANbus1, &Serial, nodesid);
-// Generic can Message container 
-CAN_message_t inMsg;
 // Nanotec motor manufacturer identifiers, CIA 402 compliant 
 uint16_t T_PDO1_id = 0x180; // ID
 uint16_t T_PDO2_id = 0x280; // ID
@@ -61,7 +59,7 @@ uint16_t tpdo2map = 0X1A01;
 uint16_t tpdo3map = 0x1A02;
 uint32_t sync_cobid = 0x80;
 
-String fileBasis = "LOG";
+String fileBasis = "datalog";
 String fileName;
 const char* fileNamePointer;
 uint16_t counter = 0;
@@ -72,6 +70,7 @@ unsigned long feedinterval = 300;
 uint16_t statusmotor = 0x00;
 int16_t actual_torque = 0x00;
 int32_t statusT = 0x00;
+char statusTStr[18] = "0b00000000";
 
 unsigned long canDelay_us = 0;
 unsigned long control_us = 0;
@@ -83,6 +82,8 @@ bool loggingActive = false;
 
 void OnReceived();
 void ReadSerial();
+void exitFault();
+void getStatus(bool print=true);
 
 void SetTorque() {
 
@@ -188,6 +189,8 @@ void SendFeedback() {
     Serial.println(".\n");
     Serial.print("Current file name: ");
     Serial.println(fileNamePointer);
+    Serial.print("Status: 0b");
+    Serial.println(statusTStr);
      
     Serial.send_now();
 }
@@ -241,33 +244,39 @@ void saveApplicationData(){
 }
 
 void setTorqueSettings() {
-  // take the first node id in the nodesid array, this can be run in a for loop
-  nodeid = nodesid[0];
-  Serial.println("Activate remote node");
-  // you can open the library and see what this does
-  SMCCAN.start_node(nodeid);
-  // this is a message object to hold incoming messages 
-  CAN_message_t inMsg1;
-  delay(29);
-  delay(1000);
-  while (CANbus1.available()) { //Clear out the canbus
-    CANbus1.read(inMsg1);
-    hexDumpAll(inMsg1, &Serial);
-  }
+    // take the first node id in the nodesid array, this can be run in a for loop
+    nodeid = nodesid[0];
+    Serial.println("Activate remote node");
+    // you can open the library and see what this does
+    SMCCAN.start_node(nodeid);
+    // this is a message object to hold incoming messages 
+    CAN_message_t inMsg1;
+    delay(1000);
+    while (CANbus1.available()) { //Clear out the canbus
+        CANbus1.read(inMsg1);
+        hexDumpAll(inMsg1, &Serial);
+    }
+    getStatus();
   
-  // PDOs can only be set on preoperational mode .- read state machine of CiA 402 motor definition on manual 
-  Serial.println("setting preoperational the node");
-  SMCCAN.preoperational_node(nodesid[0]);
-  Serial.println("Deactivate PDOs");
-  // PDOs need to be deactivated to configure them 
-  deactivatepdos();
+    if(statusT==34312){
+        exitFault();
+    }
 
-  Serial.println("Configure PDos");
-  // PDOs are configured below 
-  configurePDOS();
-  // Start the node when pdos configured 
-  Serial.println("Start the node");
-  SMCCAN.start_node(nodesid[0]);
+    getStatus();
+    
+  // PDOs can only be set on preoperational mode .- read state machine of CiA 402 motor definition on manual 
+//   Serial.println("setting preoperational the node");
+//   SMCCAN.preoperational_node(nodesid[0]);
+//   Serial.println("Deactivate PDOs");
+//   // PDOs need to be deactivated to configure them 
+//   deactivatepdos();
+
+//   Serial.println("Configure PDos");
+//   // PDOs are configured below 
+//   configurePDOS(); 
+//   // Start the node when pdos configured 
+//   Serial.println("Start the node");
+//   SMCCAN.start_node(nodesid[0]);
 
   delay(500);
   // The encoder units are set with a premultiplier, see nanotec manual
@@ -275,6 +284,7 @@ void setTorqueSettings() {
   // ragnar timing belt reduction #define REDUCTION 4.285714286 // reduction in the robot
   Serial.println("Set encoder units");
   setEncoderUnits(); 
+
   Serial.println("Setting to torque mode");
   // Change the control word to profile torque mode 
   // control word object 0x6060
@@ -284,14 +294,13 @@ void setTorqueSettings() {
   SMCCAN.readRequestFromRegister(nodeid, 0x0, 0x6060);
   SMCCAN.waitForReply(nodeid, 0x00, true);
   
-  Serial.println("setting Max torque"); // maximum torqe 1000
+  Serial.println("setting Max torque"); // maximum torque 1000
   SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)1000, 0x6072);
   SMCCAN.waitForReply(nodeid, 0x00, true);
   
   Serial.println("reading rated current");
   SMCCAN.readRequestFromRegister(nodeid, 0x01, 0x203B); //-> here is the nominal current setting 
   SMCCAN.waitForReply(nodeid, 0x01, true);
-
 }
 
 void testTorque() {
@@ -399,6 +408,30 @@ void GetNewMotorPosition(){
     canDelay_us = canDelayTimer_us.elapsed(); 
 }
 
+void getStatus(bool print=true){
+    SMCCAN.getInt32FromRegister(nodesid[0], (uint16_t)status_index, 0x0, &statusT); 
+    __itoa(statusT,statusTStr,2);
+    if (print){
+        Serial.println("OK, status");
+        Serial.print("0b");
+        Serial.println(statusTStr);
+    }
+}
+
+void exitFault(){
+    Serial.println("OK, exiting");
+    Serial.send_now();
+    SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)B10000110, control_index); // 0x6040 is the state machine control word
+    SMCCAN.waitForReply(nodeid, 0x00, true);
+  
+    delay(29);
+    CAN_message_t inMsg1;
+    while (CANbus1.available()) { //Clear out the canbus
+      CANbus1.read(inMsg1);
+      hexDumpAll(inMsg1, &Serial);
+    }
+}
+
 //////************ SETUP **************//////////////////////
 void setup() {
   // Initiate Serial Communication
@@ -416,12 +449,17 @@ void setup() {
   myMessenger.attach(OnReceived);
   CANbus1.begin();
 
-  delay(500);
+  delay(5000);
 
   Serial.println("Starting");
   oneLimb.setZref(-0.5);
   
+  getStatus();
+  
+  delay(2000);
+
   setTorqueSettings();
+  SMCCAN.writeToRegisterS(sync_cobid);
 }
 
 ///////*************** MAIN PROGRAM ******//////////////////
@@ -455,6 +493,7 @@ void loop() {
     if(loggingActive){
       oneLimb.writeToFile(fileNamePointer);
     }
+    getStatus(false);
   }
 }
 
@@ -515,25 +554,10 @@ void OnReceived() {
   	saveApplicationData(); 
   }
   else if (myMessenger.checkString("status")) {
-    Serial.println("OK, status");
-    SMCCAN.getInt32FromRegister(nodesid[0], (uint16_t)status_index, 0x0, &statusT); 
-    char str[18];
-    __itoa(statusT,str,2);
-    Serial.print("0b");
-    Serial.println(str);
+    getStatus();
   }
   else if (myMessenger.checkString("exitfault")) {
-    Serial.println("OK, exiting");
-    Serial.send_now();
-    SMCCAN.writeToRegister(nodeid, 0x00, (uint16_t)B10000110, control_index); // 0x6040 is the state machine control word
-    SMCCAN.waitForReply(nodeid, 0x00, true);
-  
-    delay(29);
-    CAN_message_t inMsg1;
-    while (CANbus1.available()) { //Clear out the canbus
-      CANbus1.read(inMsg1);
-      hexDumpAll(inMsg1, &Serial);
-    }
+      exitFault();
   }
   else if (myMessenger.checkString("fid")) {
     Serial.println("OK, feed");
