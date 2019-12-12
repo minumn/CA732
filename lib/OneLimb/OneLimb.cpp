@@ -52,7 +52,7 @@ void OneLimb::writeToFile(const char* fileName){
 		dataString += ", ";
 		dataString += res[0][0]; 
 		dataString += ", ";
-		dataString += timer; 
+		dataString += micros(); 
 
         dataFile.println(dataString);
         dataFile.close();
