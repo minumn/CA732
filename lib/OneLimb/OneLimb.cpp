@@ -103,12 +103,12 @@ void OneLimb::setMotorPositionOffset(double MotorPosOffset){
 
 void OneLimb::setStiffness(float kp){
 	if (kp < 0) kp = 0;
-	Kp[3][3] = kp;
+	Kp[2][2] = kp;
 }
 
 void OneLimb::setDamping(float kv){
 	if (kv < 0) kv = 0;
-	Kv[3][3] = kv;
+	Kv[2][2] = kv;
 }
 
 void OneLimb::setSampleTime(int ts){
