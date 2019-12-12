@@ -489,12 +489,12 @@ void OnReceived() {
   	oneLimb.setDamping(damping);
     Serial.println(damping);
   } 
-  else if (myMessenger.checkString("sampletime")) {
-    Serial.println("OK, sampletime");
-    float sampletime = myMessenger.readFloat();
-  	oneLimb.setSampleTime(sampletime);
-    Serial.println(sampletime);
-  } 
+  // else if (myMessenger.checkString("sampletime")) {
+  //   Serial.println("OK, sampletime");
+  //   float sampletime = myMessenger.readFloat();
+  // 	oneLimb.setSampleTime(sampletime);
+  //   Serial.println(sampletime);
+  // } 
   else if (myMessenger.checkString("log")) {
     Serial.println("OK, log");
 

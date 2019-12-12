@@ -70,7 +70,6 @@ public:
 
 private:
     double theta, zeta, eta, dtheta, dzeta, deta, z, _MotorPosOffset;
-    float Kpz,Kvz;
     long int timer;
     mtx_type J[N][N]; // Jacobian
     mtx_type dJ[N][N]; // Derrivitive Jacobian
