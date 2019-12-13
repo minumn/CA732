@@ -32,33 +32,33 @@ void OneLimb::writeToFile(const char* fileName){
 		// "theta, zeta, eta, dtheta, dzeta, deta, z, tau, ez"
 		//  z zr ez zeta eta theta dtheta dzeta deta torque micros
 		String dataString = "";
-		dataString += theta; 
+		dataString += micros()*100; 
 		dataString += ", ";
-		dataString += zeta; 
+		dataString += theta*100; 
 		dataString += ", ";
-		dataString += eta; 
+		dataString += zeta*100; 
 		dataString += ", ";
-		dataString += dtheta; 
+		dataString += eta*100; 
 		dataString += ", ";
-		dataString += dzeta; 
+		dataString += dtheta*100; 
 		dataString += ", ";
-		dataString += deta; 
+		dataString += dzeta*100; 
 		dataString += ", ";
-		dataString += z;  
+		dataString += deta*100; 
 		dataString += ", ";
-		dataString += xr[2][0]; 
+		dataString += z*100;  
 		dataString += ", ";
-		dataString += ex[2][0];
+		dataString += xr[2][0]*100; 
 		dataString += ", ";
-		dataString += res[0][0]; 
+		dataString += ex[2][0]*100;
 		dataString += ", ";
-		dataString += micros(); 
+		dataString += res[0][0]*100; 
 
         dataFile.println(dataString);
         dataFile.close();
         
         // print to the serial port too:
-        Serial.println(dataString);
+        // Serial.println(dataString);
     }
     // if the file isn't open, pop up an error:
     else {

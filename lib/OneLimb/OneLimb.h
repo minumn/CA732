@@ -32,8 +32,8 @@
 #define mp 0.25 // kg
 #define mb 0.3 // kg
 
-#define ZUPPERLIMIT -0.4 // meter
-#define ZLOWERLIMIT -0.6 // meter
+#define ZUPPERLIMIT -0.43 // meter
+#define ZLOWERLIMIT -0.65 // meter
 
 #define CONTROLDELAY 10000 // us -> 20 ms
 #define SAMPLETIME 0.01

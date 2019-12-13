@@ -545,7 +545,7 @@ void OnReceived() {
   } 
   else if (myMessenger.checkString("setz")) {
     Serial.println("OK, z");
-    int zpos = myMessenger.readInt();
+    float zpos = -myMessenger.readFloat();
   	oneLimb.setZref(zpos);
     Serial.println(zpos);
   } 

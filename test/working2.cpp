@@ -24,14 +24,13 @@ OneLimb oneLimb;
 File myFile;
 const int chipSelect = BUILTIN_SDCARD;
 bool file_open = false; 
-
 // CANbus objects
 // FlexCAN CANbus1(1000000, 1, 1, 1);
 // FlexCAN CANbus0(1000000, 0, 1, 1);
 FlexCAN CANbus0(1000000, 0, 1, 1);
 FlexCAN CANbus1(1000000, 1, 1, 1);
 
-#define MOTORINUSE 0x03
+#define MOTORINUSE 0x02
 
 Chrono sampling_time(Chrono::MICROS);
 Chrono feedback_samplingtime(Chrono::MICROS);
@@ -551,7 +550,7 @@ void setTorqueSettings() {
   // torque is set as a percentage of this rated currrent
   // from motor specs example 3 Amps 4 Nm 
   //                          if set to 1 Amps then max torque 4*1/3 
-  SMCCAN.writeToRegister(nodeid, 0x01, (uint32_t)2800, 0x203B); //-> here is the nominal current setting 
+  SMCCAN.writeToRegister(nodeid, 0x01, (uint32_t)0x41A, 0x203B); //-> here is the nominal current setting 
   SMCCAN.waitForReply(nodeid, 0x01, true);
   delay(50);
   Serial.println("reading rated current");
@@ -949,12 +948,6 @@ void OnReceived() {
     }
     Serial.println("going out lerror");
   }
-  else if (myMessenger.checkString("setz")) {
-    Serial.println("OK, z");
-    float zpos = -myMessenger.readFloat();
-  	oneLimb.setZref(zpos);
-    Serial.println(zpos);
-  } 
   else if (myMessenger.checkString("testtorque")) {
     Serial.println("OK, torquetest");
     Serial.send_now();
@@ -1147,44 +1140,24 @@ void GetNewMotorPosition(){
 
 //////************ SETUP **************//////////////////////
 void setup() {
-    // Initiate Serial Communication
-    Serial.begin(250000);
-    // Activate the CAN bus device
-    pinMode(28, OUTPUT);
-    pinMode(35, OUTPUT);
-    digitalWrite(28, LOW);
-    digitalWrite(35, LOW);
-    myMessenger.attach(OnReceived);
-    // reserve 200 bytes for the input_string:
-    input_string.reserve(200);
-    CANbus1.begin();
-    delay(500);
-    Serial.println("Starting");
-    oneLimb.setZref(-0.5);
-    
-    setTorqueSettings();
+  // Initiate Serial Communication
+  Serial.begin(250000);
+  // Activate the CAN bus device
+  pinMode(28, OUTPUT);
+  pinMode(35, OUTPUT);
+  digitalWrite(28, LOW);
+  digitalWrite(35, LOW);
+  myMessenger.attach(OnReceived);
+  // reserve 200 bytes for the input_string:
+  input_string.reserve(200);
+  CANbus1.begin();
+  delay(500);
+  Serial.println("Starting");
+  oneLimb.setZref(-0.5);
+  
+  setTorqueSettings();
 
-    // Init SD card.
-    if (!SD.begin(BUILTIN_SDCARD)) {
-        Serial.println("Card failed, or not present");
-        // don't do anything more:
-        while (1);
-    }
-    Serial.println("card initialized.");
-    SD.remove("datalog.txt");
-    delay(1000);
-    File dataFile = SD.open("datalog.txt", FILE_WRITE);
-    if (dataFile){
-        dataFile.println("time, theta, zeta, eta, dtheta, dzeta, deta, z, zr, ez, tau");
-        Serial.println("File ok");
-        dataFile.close();
-    } else {
-        while(1){
-            Serial.println("File error");
-            delay(1000);
-        }
-    }
-
+  SD.remove("datalog.txt");
   
   SMCCAN.writeToRegisterS(sync_cobid);
 }
@@ -1205,7 +1178,7 @@ void loop() {
     GetNewMotorPosition();
 
     // do some control 
-    torque = kpp*oneLimb.getTorque(motor_position);
+    // torque = kpp*oneLimb.getTorque(motor_position);
 
     if(abs(torque) > 1000)
         torque = sign(torque)*1000;
@@ -1216,7 +1189,8 @@ void loop() {
     SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorqueindex); //  1000 is 100% 
     SMCCAN.waitForReply(nodeid, 0x00, false);
 
-    // if (!stopnow)
-    //     oneLimb.writeToFile("datalog.txt");
+    // oneLimb.writeToFile("datalog.txt");
   }
+  // SMCCAN.readRequestFromRegister(nodeid, (int8_t)0x00, 0x6064); // (node, subindex, pos mode, index)
+  // SMCCAN.waitForReply(nodeid, 0x00, true);
 }
