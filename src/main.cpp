@@ -33,6 +33,8 @@ FlexCAN CANbus1(1000000, 1, 1, 1);
 
 #define MOTORINUSE 0x03
 
+float guard1[25] = {0.0};
+
 Chrono sampling_time(Chrono::MICROS);
 Chrono feedback_samplingtime(Chrono::MICROS);
 Chrono cycle_time(Chrono::MICROS);
@@ -40,6 +42,15 @@ Chrono feedback_time(Chrono::MICROS);
 Chrono wait_feedback;
 Chrono control_time(Chrono::MICROS);
 Chrono samplingvar(Chrono::MICROS);
+float guard2[25] = {0.0};
+
+#define Ndata 2000
+float data[4][Ndata] = {-11.2};
+long int counter = 0;
+bool save = 0;
+bool logvar = 0;
+
+
 Chrono show_control_var;
 Chrono trajectory_time(Chrono::MILLIS);
 Chrono testpoint_time;
@@ -49,6 +60,7 @@ Chrono outerloop_time;
 Chrono goal_timeout; 
 Chrono statemachine_time;
 Chrono test_control(Chrono::MICROS);
+
 Chrono chronosine;
 uint8_t nodeid = MOTORINUSE;
 String input_string = "";
@@ -426,7 +438,7 @@ void SendFeedback() {
     Serial.print(" deg, ");
     Serial.print(oneLimb.motorPosToRad(motor_position));
     Serial.print(" rad, z: ");
-    Serial.print(oneLimb.CalculateZ(motor_position));
+    Serial.print(oneLimb.z);
     Serial.println(" m.");
 
     Serial.print("Torque: ");
@@ -994,11 +1006,20 @@ void OnReceived() {
   else if (myMessenger.checkString("s")) {
     Serial.println("OK, stop");
     stopnow = true; 
+    save = true;
+    logvar = false;
   }
   else if (myMessenger.checkString("st")) {
     Serial.println("OK, start");
-    motposd = motpos;
-    stopnow = false; 
+    stopnow = false;
+  }
+  else if (myMessenger.checkString("log")) {
+    Serial.println("OK, log");
+    sampling_time.restart();
+    cycle_time.restart();
+    feedback_time.restart();
+    logvar = true;
+    save = false;
   }
   else if (myMessenger.checkString("intc")) {
     Serial.println("OK, integral control");
@@ -1140,9 +1161,11 @@ void ReadSerial() {
 }
 
 void GetNewMotorPosition(){
-    samplingvar.restart();
+    feedback_samplingtime.restart();
+    LED(1);
     SMCCAN.getInt32FromRegister(nodesid[0], 0x6064, 0x0, &motor_position); 
-    passed_reading = samplingvar.elapsed(); 
+    LED(0);
+    passed_reading = feedback_samplingtime.elapsed(); 
 }
 
 //////************ SETUP **************//////////////////////
@@ -1152,15 +1175,18 @@ void setup() {
     // Activate the CAN bus device
     pinMode(28, OUTPUT);
     pinMode(35, OUTPUT);
+    pinMode(13, OUTPUT); // LED for timing tests.
     digitalWrite(28, LOW);
     digitalWrite(35, LOW);
     myMessenger.attach(OnReceived);
     // reserve 200 bytes for the input_string:
     input_string.reserve(200);
     CANbus1.begin();
-    delay(500);
+    delay(5000);
     Serial.println("Starting");
-    oneLimb.setZref(-0.5);
+    oneLimb.setZref(-0.6);
+    oneLimb.setMotorPositionOffset(-350);
+    // LED(1);
     
     setTorqueSettings();
 
@@ -1168,14 +1194,17 @@ void setup() {
     if (!SD.begin(BUILTIN_SDCARD)) {
         Serial.println("Card failed, or not present");
         // don't do anything more:
-        while (1);
+        while (1){
+          delay(1000);
+          Serial.println("Card failed, or not present");
+        }
     }
     Serial.println("card initialized.");
     SD.remove("datalog.txt");
     delay(1000);
     File dataFile = SD.open("datalog.txt", FILE_WRITE);
     if (dataFile){
-        dataFile.println("time, theta, zeta, eta, dtheta, dzeta, deta, z, zr, ez, tau");
+        dataFile.println("time, tau, z, zr");
         Serial.println("File ok");
         dataFile.close();
     } else {
@@ -1188,6 +1217,7 @@ void setup() {
   
   SMCCAN.writeToRegisterS(sync_cobid);
 }
+
 ///////*************** MAIN PROGRAM ******//////////////////
 void loop() {
   
@@ -1198,7 +1228,7 @@ void loop() {
     SendFeedback();
   }
 
-  if (test_sdo && test_control.hasPassed(10000)) {
+  if (test_sdo && test_control.hasPassed(5000)) {
     control_us = test_control.elapsed();
     test_control.restart();
 
@@ -1213,10 +1243,46 @@ void loop() {
     if (stopnow) 
       torque = 0;
 
+    // LED(1);
+
     SMCCAN.writeToRegister(nodeid, 0x00, (int16_t)torque, targettorqueindex); //  1000 is 100% 
     SMCCAN.waitForReply(nodeid, 0x00, false);
 
-    // if (!stopnow)
-    //     oneLimb.writeToFile("datalog.txt");
+    // LED(0);
+
+    if (logvar && (counter < (Ndata-1))){
+      data[0][counter] = sampling_time.elapsed();
+      data[1][counter] = torque;
+      data[2][counter] = oneLimb.z;
+      data[3][counter] = oneLimb.zr;
+      ++counter;
+    } else if (stopnow && save && (counter > 10)){
+      File file = SD.open("datalog.txt", FILE_WRITE);
+
+      if (file){
+        Serial.println("File open, trying to save.");
+        save = false;
+        String str = "";
+        for (size_t i = 0; i < counter; i++)
+        {
+          str = "";
+          for (size_t j = 0; j < 4; j++)
+          {
+            str += data[j][i]*100;
+            if (j<3) str += ", ";
+          }
+          file.println(str);
+          Serial.println(str);
+        }
+        file.close();
+      } else {
+        Serial.println("Couldnt open file nor save!");
+        delay(500);
+      }
+    }
   }
+
+  // if (!stopnow && (sampling_time.elapsed() > 1000000)){ // 100ms?
+  //   oneLimb.setZref(-0.5);
+  // }
 }
