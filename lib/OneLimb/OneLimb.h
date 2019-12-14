@@ -35,8 +35,8 @@
 #define ZUPPERLIMIT -0.43 // meter
 #define ZLOWERLIMIT -0.65 // meter
 
-#define CONTROLDELAY 10000 // us -> 20 ms
-#define SAMPLETIME 0.01
+#define CONTROLDELAY 5000 // us -> 20 ms
+#define SAMPLETIME 0.005
 
 // #define alpha 0.2618
 // #define beta 0.7854
@@ -68,8 +68,10 @@ public:
     void setDamping(float kvz);
     void setSampleTime(int ts);
 
+    double z, zr;
+
 private:
-    double theta, zeta, eta, dtheta, dzeta, deta, z, _MotorPosOffset;
+    double theta, zeta, eta, dtheta, dzeta, deta, _MotorPosOffset;
     long int timer;
     mtx_type J[N][N]; // Jacobian
     mtx_type dJ[N][N]; // Derrivitive Jacobian

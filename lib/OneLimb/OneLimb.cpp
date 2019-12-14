@@ -82,6 +82,7 @@ void OneLimb::setZref(double Z){
 	}
 	
 	xr[2][0] = Z;
+	zr=Z;
 
 	// Update new error
 	exUpdate();
@@ -839,5 +840,5 @@ int sign(float x) {
 }
 
 void LED(bool on){
-	digitalWrite(13,on);
+	digitalWrite(13,on); // Must initiate with pinMode(13, OUTPUT);
 }
