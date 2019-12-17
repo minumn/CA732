@@ -48,24 +48,26 @@
 #define sinBetaHalf 0.3827
 #define tanBetaHalf 0.4142
 
+
+/* OneLimb is used to calculate the required torque to make 
+ * a constrained limb of the Ragner robot move along the z axis.*/
 class OneLimb
 {
 public:
-    OneLimb();
-    ~OneLimb();
-    double getTorque(double AbsMotorPos);
-    double getTorque();
-    void setZref(double Z);
-    void newData(double AbsMotorPos);
-    double motorPosToRad(double MotorPos);
-    double motorPosToDeg(double MotorPos);
-    void setMotorPositionOffset(double MotorPosOffset);
-    void writeToFile(const char* fileName);
-    double CalculateZ(double Theta);
+    OneLimb(); 
+    ~OneLimb(); 
+    double getTorque(); // Gets the torque value.
+    double getTorque(double AbsMotorPos); // Feed new position value and get the new torque value.
+    void setZref(double Z); // Set the z reference
+    void newData(double AbsMotorPos); // Feed new data to the model.
+    double motorPosToRad(double MotorPos); // Convert from motor ticks to angle in radian (theta)
+    double motorPosToDeg(double MotorPos); // Convert from motor ticks to angle in degrees (theta)
+    void setMotorPositionOffset(double MotorPosOffset); // The motor can get an undesired offset due to gearing.
+    void writeToFile(const char* fileName); // Saved data to SD. SLOW (5-8 ms)
+    double CalculateZ(double Theta); // Forward kinematic for z
 
-    void startLogging();
-    void setStiffness(float kpz);
-    void setDamping(float kvz);
+    void setStiffness(float kpz); // Set stiffness value for the Impedance Controller
+    void setDamping(float kvz); // Set Damping value for the Impedance Controller
     void setSampleTime(int ts);
 
     double z, zr;

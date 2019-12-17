@@ -69,9 +69,7 @@ void OneLimb::writeToFile(const char* fileName){
     }
 }
 
-void OneLimb::startLogging(){
 
-}
 
 void OneLimb::setZref(double Z){
 	// Only values between -0.4 and -1.0 is allowed.
