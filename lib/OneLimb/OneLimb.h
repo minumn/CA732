@@ -49,8 +49,10 @@
 #define tanBetaHalf 0.4142
 
 
-/* OneLimb is used to calculate the required torque to make 
- * a constrained limb of the Ragner robot move along the z axis.*/
+/**
+ * OneLimb is used to calculate the required torque to make 
+ * a constrained limb of the Ragner robot move along the z axis.
+ */
 class OneLimb
 {
 public:
